@@ -13,6 +13,7 @@ import {
 } from '../../models/documento.model';
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../core/services/documents.service';
+import { UsersService } from '../../core/services/users.service';
 
 @Component({
   standalone: true,
@@ -34,6 +35,8 @@ export default class DocumentosComponent implements OnInit {
   isPermisosModalOpen = false;
   isMetadatosModalOpen = false;
 
+  isDropdownOpen = false;
+  
   isEditing = false;
   currentDocumentoId: string | null = null;
   currentVersion: DocumentoVersion | null = null;
@@ -51,13 +54,12 @@ export default class DocumentosComponent implements OnInit {
   currentUser: Usuario = {
     id: 1,
     username: 'admin',
-    nombre_completo: 'Administrador',
     email: 'admin@example.com',
     rol: 'Administrador'
   };
 
   cargando: boolean = true;
-  constructor(private fb: FormBuilder, private documentosService: DocumentsService) {
+  constructor(private fb: FormBuilder, private documentosService: DocumentsService, private usersService: UsersService) {
     this.documentoForm = this.fb.group({
       titulo: ['', [Validators.required]],
       descripcion: [''],
@@ -75,7 +77,6 @@ export default class DocumentosComponent implements OnInit {
     this.permisoForm = this.fb.group({
       usuarios: this.fb.array([])
     });
-    this.cargarDatosEjemplo();
   }
 
   ngOnInit(): void {
@@ -113,7 +114,6 @@ export default class DocumentosComponent implements OnInit {
     this.usuariosPermisosArray.push(
       this.fb.group({
         usuario_id: [usuario.id, Validators.required],
-        nombre_usuario: [usuario.nombre_completo],
         puede_ver: [puede_ver],
         puede_editar: [puede_editar],
         puede_descargar: [puede_descargar],
@@ -128,37 +128,6 @@ export default class DocumentosComponent implements OnInit {
   }
 
   // Datos de ejemplo para probar xd
-  cargarDatosEjemplo(): void {
-    this.usuarios = [
-      { id: 1, username: 'admin', nombre_completo: 'Administrador', email: 'admin@example.com', rol: 'Administrador' },
-      { id: 2, username: 'juan', nombre_completo: 'Juan Pérez', email: 'juan@example.com', rol: 'Editor' },
-      { id: 3, username: 'maria', nombre_completo: 'María López', email: 'maria@example.com', rol: 'Lector' },
-      { id: 4, username: 'carlos', nombre_completo: 'Carlos Rodríguez', email: 'carlos@example.com', rol: 'Editor' }
-    ];
-
-    this.roles = [
-      {
-        id: 1,
-        nombre: 'Administrador',
-        descripcion: 'Control total del sistema',
-        permisos: ['ver', 'editar', 'descargar', 'eliminar']
-      },
-      {
-        id: 2,
-        nombre: 'Editor',
-        descripcion: 'Puede editar y ver documentos',
-        permisos: ['ver', 'editar', 'descargar']
-      },
-      {
-        id: 3,
-        nombre: 'Lector',
-        descripcion: 'Solo puede ver documentos',
-        permisos: ['ver', 'descargar']
-      }
-    ];
-
-    this.documentosFiltrados = [...this.documentos];
-  }
 
   abrirModalCrear(): void {
     this.isEditing = false;
@@ -207,6 +176,8 @@ export default class DocumentosComponent implements OnInit {
 
   abrirModalPermisos(documento: Documento): void {
     this.currentDocumentoId = documento.id;
+    console.log('modal abierta')
+    console.log(this.usuarios)
 
     // Limpiar permisos existentes
     while (this.usuariosPermisosArray.length) {
@@ -225,8 +196,10 @@ export default class DocumentosComponent implements OnInit {
         );
       });
     }
-
+    
     this.isPermisosModalOpen = true;
+
+
   }
 
   abrirModalMetadatos(documento: Documento): void {
@@ -328,6 +301,9 @@ export default class DocumentosComponent implements OnInit {
         this.aplicarFiltros();
         this.cargando = false;
       }
+    })
+    this.usersService.getUsuarios().subscribe(res => {
+      this.usuarios = res;
     })
   }
 
@@ -516,11 +492,19 @@ export default class DocumentosComponent implements OnInit {
     return this.documentoActual?.versiones?.length === 0;
   }
 
+  getUsuarios(): Usuario[] {
+    return this.usuarios;
+  }
+
   tienePermisoDescargar(): boolean {
     // TODO
     if (!this.documentoActual) {
       return false;
     }
     return this.tienePermiso(this.documentoActual, 'descargar');
+  }
+
+  abrirDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
   }
 }

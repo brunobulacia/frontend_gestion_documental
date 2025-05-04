@@ -1,616 +1,283 @@
 <div *ngIf="cargando">Cargando...</div>
-<div *ngIf="!cargando">
-  <div class="documents-container">
-    <!-- Encabezado y acciones -->
-    <div class="documents-header">
-      <div class="header-title">
-        <h1>Documentos</h1>
-        <p class="text-muted">Gestiona tus documentos y archivos</p>
+<div class="documents-container">
+  <!-- Encabezado y acciones -->
+  <div class="documents-header">
+    <div class="header-title">
+      <h1>Documentos</h1>
+      <p class="text-muted">Gestiona tus documentos y archivos</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="abrirModalCrear()">
+        <i class="fas fa-plus"></i> Nuevo Documento
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros y búsqueda -->
+  <div class="filters-container">
+    <div class="search-box">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Buscar documentos..."
+        [(ngModel)]="searchTerm"
+        (input)="aplicarFiltros()"
+      />
+      <i class="fas fa-search search-icon"></i>
+    </div>
+    <div class="filters">
+      <div class="filter-group">
+        <label for="tipo-filter">Tipo:</label>
+        <select
+          id="tipo-filter"
+          class="form-control"
+          [(ngModel)]="tipoFilter"
+          (change)="aplicarFiltros()"
+        >
+          <option value="all">Todos</option>
+          <option *ngFor="let tipo of tiposDocumento" [value]="tipo.id">
+            {{ tipo.nombre }}
+          </option>
+        </select>
       </div>
-      <div class="header-actions">
-        <button class="btn btn-primary" (click)="abrirModalCrear()">
-          <i class="fas fa-plus"></i> Nuevo Documento
+      <div class="filter-group">
+        <label for="area-filter">Área:</label>
+        <select
+          id="area-filter"
+          class="form-control"
+          [(ngModel)]="areaFilter"
+          (change)="aplicarFiltros()"
+        >
+          <option value="all">Todas</option>
+          <option *ngFor="let area of areas" [value]="area.id">
+            {{ area.nombre }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de documentos -->
+  <div class="documents-table-container">
+    <table class="documents-table">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Tipo</th>
+          <th>Área</th>
+          <th>Última versión</th>
+          <th>Fecha modificación</th>
+          <th>Creado por</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let documento of documentosFiltrados">
+          <td>{{ documento.titulo }}</td>
+          <td>{{ documento.tipo?.nombre ?? "Sin tipo" }}</td>
+          <td>{{ documento.area?.nombre ?? "Sin área" }}</td>
+          <td>
+            <span *ngIf="obtenerUltimaVersion(documento)">
+              v{{ obtenerUltimaVersion(documento)?.version }}
+            </span>
+            <span *ngIf="!obtenerUltimaVersion(documento)" class="text-muted">
+              Sin versiones
+            </span>
+          </td>
+          <td>
+            {{ documento.fecha_modificacion | date : "dd/MM/yyyy HH:mm" }}
+          </td>
+          <td>{{ documento.creado_por.username }}</td>
+          <td>
+            <div class="actions-container">
+              <button
+                class="btn-icon"
+                title="Ver detalles"
+                *ngIf="tienePermiso(documento, 'ver')"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+              <button
+                class="btn-icon"
+                title="Editar documento"
+                (click)="abrirModalEditar(documento)"
+                *ngIf="tienePermiso(documento, 'editar')"
+              >
+                <i class="fas fa-edit"></i>
+              </button>
+              <button
+                class="btn-icon"
+                title="Gestionar versiones"
+                (click)="abrirModalVersiones(documento)"
+                *ngIf="tienePermiso(documento, 'editar')"
+              >
+                <i class="fas fa-code-branch"></i>
+              </button>
+              <button
+                class="btn-icon"
+                title="Gestionar permisos"
+                (click)="abrirModalPermisos(documento)"
+                *ngIf="tienePermiso(documento, 'editar')"
+              >
+                <i class="fas fa-user-lock"></i>
+              </button>
+              <button
+                class="btn-icon"
+                title="Gestionar metadatos"
+                (click)="abrirModalMetadatos(documento)"
+                *ngIf="tienePermiso(documento, 'editar')"
+              >
+                <i class="fas fa-tags"></i>
+              </button>
+              <button
+                class="btn-icon btn-danger"
+                title="Eliminar documento"
+                (click)="eliminarDocumento(documento.id)"
+                *ngIf="tienePermiso(documento, 'eliminar')"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="documentosFiltrados.length === 0">
+          <td colspan="7" class="no-results">
+            No se encontraron documentos que coincidan con los criterios de
+            búsqueda.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal para crear/editar documento -->
+  <div class="modal" *ngIf="isModalOpen">
+    <div class="modal-backdrop" (click)="cerrarModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ isEditing ? "Editar documento" : "Nuevo documento" }}</h3>
+        <button class="btn-close" (click)="cerrarModal()">
+          <i class="fas fa-times"></i>
         </button>
       </div>
-    </div>
-
-    <!-- Filtros y búsqueda -->
-    <div class="filters-container">
-      <div class="search-box">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Buscar documentos..."
-          [(ngModel)]="searchTerm"
-          (input)="aplicarFiltros()"
-        />
-        <i class="fas fa-search search-icon"></i>
-      </div>
-      <div class="filters">
-        <div class="filter-group">
-          <label for="tipo-filter">Tipo:</label>
-          <select
-            id="tipo-filter"
-            class="form-control"
-            [(ngModel)]="tipoFilter"
-            (change)="aplicarFiltros()"
-          >
-            <option value="all">Todos</option>
-            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.id">
-              {{ tipo.nombre }}
-            </option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="area-filter">Área:</label>
-          <select
-            id="area-filter"
-            class="form-control"
-            [(ngModel)]="areaFilter"
-            (change)="aplicarFiltros()"
-          >
-            <option value="all">Todas</option>
-            <option *ngFor="let area of areas" [value]="area.id">
-              {{ area.nombre }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabla de documentos -->
-    <div class="documents-table-container">
-      <table class="documents-table">
-        <thead>
-          <tr>
-            <th>Título</th>
-            <th>Tipo</th>
-            <th>Área</th>
-            <th>Última versión</th>
-            <th>Fecha modificación</th>
-            <th>Creado por</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let documento of documentosFiltrados">
-            <td>{{ documento.titulo }}</td>
-            <td>{{ documento.tipo?.nombre ?? "Sin tipo" }}</td>
-            <td>{{ documento.area?.nombre ?? "Sin área" }}</td>
-            <td>
-              <span *ngIf="obtenerUltimaVersion(documento)">
-                v{{ obtenerUltimaVersion(documento)?.version }}
-              </span>
-              <span *ngIf="!obtenerUltimaVersion(documento)" class="text-muted">
-                Sin versiones
-              </span>
-            </td>
-            <td>
-              {{ documento.fecha_modificacion | date : "dd/MM/yyyy HH:mm" }}
-            </td>
-            <td>{{ documento.creado_por.username }}</td>
-            <td>
-              <div class="actions-container">
-                <button
-                  class="btn-icon"
-                  title="Ver detalles"
-                  *ngIf="tienePermiso(documento, 'ver')"
-                >
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button
-                  class="btn-icon"
-                  title="Editar documento"
-                  (click)="abrirModalEditar(documento)"
-                  *ngIf="tienePermiso(documento, 'editar')"
-                >
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button
-                  class="btn-icon"
-                  title="Gestionar versiones"
-                  (click)="abrirModalVersiones(documento)"
-                  *ngIf="tienePermiso(documento, 'editar')"
-                >
-                  <i class="fas fa-code-branch"></i>
-                </button>
-                <button
-                  class="btn-icon"
-                  title="Gestionar permisos"
-                  (click)="abrirModalPermisos(documento)"
-                  *ngIf="tienePermiso(documento, 'editar')"
-                >
-                  <i class="fas fa-user-lock"></i>
-                </button>
-                <button
-                  class="btn-icon"
-                  title="Gestionar metadatos"
-                  (click)="abrirModalMetadatos(documento)"
-                  *ngIf="tienePermiso(documento, 'editar')"
-                >
-                  <i class="fas fa-tags"></i>
-                </button>
-                <button
-                  class="btn-icon btn-danger"
-                  title="Eliminar documento"
-                  (click)="eliminarDocumento(documento.id)"
-                  *ngIf="tienePermiso(documento, 'eliminar')"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="documentosFiltrados.length === 0">
-            <td colspan="7" class="no-results">
-              No se encontraron documentos que coincidan con los criterios de
-              búsqueda.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Modal para crear/editar documento -->
-    <div class="modal" *ngIf="isModalOpen">
-      <div class="modal-backdrop" (click)="cerrarModal()"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ isEditing ? "Editar documento" : "Nuevo documento" }}</h3>
-          <button class="btn-close" (click)="cerrarModal()">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form [formGroup]="documentoForm" (ngSubmit)="guardarDocumento()">
-            <div class="form-group">
-              <label for="titulo" class="form-label">Título</label>
-              <input
-                type="text"
-                id="titulo"
-                formControlName="titulo"
-                class="form-control"
-                [class.is-invalid]="
-                  documentoForm.get('titulo')?.invalid &&
-                  documentoForm.get('titulo')?.touched
-                "
-              />
-              <div
-                *ngIf="
-                  documentoForm.get('titulo')?.invalid &&
-                  documentoForm.get('titulo')?.touched
-                "
-                class="form-error"
-              >
-                El título es obligatorio.
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="descripcion" class="form-label">Descripción</label>
-              <textarea
-                id="descripcion"
-                formControlName="descripcion"
-                class="form-control"
-                rows="3"
-              ></textarea>
-            </div>
-            <div class="form-group">
-              <label for="archivo" class="form-label">Archivo</label>
-              <input
-                type="file"
-                id="archivo"
-                (change)="onFileSelected($event)"
-                required
-                accept=".pdf,.docx,.xlsx"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="tipo_id" class="form-label">Tipo de documento</label>
-              <select
-                id="tipo_id"
-                formControlName="tipo_id"
-                class="form-control"
-                [class.is-invalid]="
-                  documentoForm.get('tipo_id')?.invalid &&
-                  documentoForm.get('tipo_id')?.touched
-                "
-              >
-                <option value="">Seleccionar tipo</option>
-                <option *ngFor="let tipo of tiposDocumento" [value]="tipo.id">
-                  {{ tipo.nombre }}
-                </option>
-              </select>
-              <div
-                *ngIf="
-                  documentoForm.get('tipo_id')?.invalid &&
-                  documentoForm.get('tipo_id')?.touched
-                "
-                class="form-error"
-              >
-                El tipo de documento es obligatorio.
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="area_id" class="form-label">Área</label>
-              <select
-                id="area_id"
-                formControlName="area_id"
-                class="form-control"
-                [class.is-invalid]="
-                  documentoForm.get('area_id')?.invalid &&
-                  documentoForm.get('area_id')?.touched
-                "
-              >
-                <option value="">Seleccionar área</option>
-                <option *ngFor="let area of areas" [value]="area.id">
-                  {{ area.nombre }}
-                </option>
-              </select>
-              <div
-                *ngIf="
-                  documentoForm.get('area_id')?.invalid &&
-                  documentoForm.get('area_id')?.touched
-                "
-                class="form-error"
-              >
-                El área es obligatoria.
-              </div>
-            </div>
-
-            <div class="form-group">
-              <div class="checkbox-container">
-                <input
-                  type="checkbox"
-                  id="es_publico"
-                  formControlName="es_publico"
-                />
-                <label for="es_publico" class="checkbox-label"
-                  >Documento público</label
-                >
-              </div>
-              <small class="text-muted"
-                >Los documentos públicos pueden ser vistos por todos los
-                usuarios.</small
-              >
-            </div>
-
-            <div class="form-section">
-              <h4>Metadatos personalizados</h4>
-              <div formArrayName="metadatos">
-                <div
-                  *ngFor="
-                    let metadato of metadatosArray.controls;
-                    let i = index
-                  "
-                  [formGroupName]="i"
-                  class="metadato-row"
-                >
-                  <div class="metadato-fields">
-                    <div class="form-group">
-                      <input
-                        type="text"
-                        formControlName="clave"
-                        class="form-control"
-                        placeholder="Clave"
-                        [class.is-invalid]="
-                          metadato.get('clave')?.invalid &&
-                          metadato.get('clave')?.touched
-                        "
-                      />
-                    </div>
-                    <div class="form-group">
-                      <input
-                        type="text"
-                        formControlName="valor"
-                        class="form-control"
-                        placeholder="Valor"
-                        [class.is-invalid]="
-                          metadato.get('valor')?.invalid &&
-                          metadato.get('valor')?.touched
-                        "
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      class="btn-icon btn-danger"
-                      (click)="eliminarMetadato(i)"
-                    >
-                      <i class="fas fa-times"></i>
-                    </button>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  class="btn btn-outline btn-sm"
-                  (click)="agregarMetadato()"
-                >
-                  <i class="fas fa-plus"></i> Agregar metadato
-                </button>
-              </div>
-            </div>
-
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-outline"
-                (click)="cerrarModal()"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="documentoForm.invalid"
-              >
-                {{ isEditing ? "Actualizar" : "Crear" }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal para gestionar versiones -->
-    <div class="modal" *ngIf="isVersionModalOpen">
-      <div class="modal-backdrop" (click)="cerrarModal()"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Versiones del documento</h3>
-          <button class="btn-close" (click)="cerrarModal()">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div *ngIf="currentDocumentoId">
-            <div class="version-list">
-              <h4>Historial de versiones</h4>
-              <div *ngIf="documentoSinVersiones" class="no-versions">
-                No hay versiones disponibles para este documento.
-              </div>
-              <div
-                *ngFor="let version of documentoActual?.versiones"
-                class="version-item"
-              >
-                <div class="version-header">
-                  <div class="version-info">
-                    <span class="version-number">v{{ version.version }}</span>
-                    <span class="version-date">{{
-                      version.fecha_subida | date : "dd/MM/yyyy HH:mm"
-                    }}</span>
-                  </div>
-                  <div class="version-actions">
-                    <button
-                      class="btn-icon"
-                      title="Descargar versión"
-                      (click)="descargarVersion(version)"
-                      *ngIf="tienePermisoDescargar()"
-                    >
-                      <i class="fas fa-download"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="version-details">
-                  <div class="version-file">
-                    <i class="fas fa-file-pdf"></i>
-                    {{ version.nombre_archivo || "documento.pdf" }}
-                  </div>
-                  <div class="version-user">
-                    <i class="fas fa-user"></i>
-                    {{ version.subido_por.nombre_completo }}
-                  </div>
-                  <div class="version-comments" *ngIf="version.comentarios">
-                    <i class="fas fa-comment"></i> {{ version.comentarios }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="version-upload">
-              <h4>Subir nueva versión</h4>
-              <form [formGroup]="versionForm" (ngSubmit)="guardarVersion()">
-                <div class="form-group">
-                  <label for="archivo" class="form-label">Archivo</label>
-                  <div class="file-upload">
-                    <input
-                      type="file"
-                      id="archivo"
-                      formControlName="archivo"
-                      class="file-input"
-                      [class.is-invalid]="
-                        versionForm.get('archivo')?.invalid &&
-                        versionForm.get('archivo')?.touched
-                      "
-                    />
-                    <label for="archivo" class="file-label">
-                      <i class="fas fa-cloud-upload-alt"></i> Seleccionar
-                      archivo
-                    </label>
-                  </div>
-                  <div
-                    *ngIf="
-                      versionForm.get('archivo')?.invalid &&
-                      versionForm.get('archivo')?.touched
-                    "
-                    class="form-error"
-                  >
-                    El archivo es obligatorio.
-                  </div>
-                  <small class="text-muted"
-                    >Formatos permitidos: PDF, DOCX, XLSX (máx. 10MB)</small
-                  >
-                </div>
-
-                <div class="form-group">
-                  <label for="comentarios" class="form-label"
-                    >Comentarios</label
-                  >
-                  <textarea
-                    id="comentarios"
-                    formControlName="comentarios"
-                    class="form-control"
-                    rows="3"
-                    placeholder="Describa los cambios realizados en esta versión"
-                  ></textarea>
-                </div>
-
-                <div class="modal-footer">
-                  <button
-                    type="button"
-                    class="btn btn-outline"
-                    (click)="cerrarModal()"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    class="btn btn-primary"
-                    [disabled]="versionForm.invalid"
-                  >
-                    Subir versión
-                  </button>
-                </div>
-              </form>
+      <div class="modal-body">
+        <form [formGroup]="documentoForm" (ngSubmit)="guardarDocumento()">
+          <div class="form-group">
+            <label for="titulo" class="form-label">Título</label>
+            <input
+              type="text"
+              id="titulo"
+              formControlName="titulo"
+              class="form-control"
+              [class.is-invalid]="
+                documentoForm.get('titulo')?.invalid &&
+                documentoForm.get('titulo')?.touched
+              "
+            />
+            <div
+              *ngIf="
+                documentoForm.get('titulo')?.invalid &&
+                documentoForm.get('titulo')?.touched
+              "
+              class="form-error"
+            >
+              El título es obligatorio.
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Modal para gestionar permisos -->
-    <div class="modal" *ngIf="isPermisosModalOpen">
-      <div class="modal-backdrop" (click)="cerrarModal()"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Permisos del documento</h3>
-          <button class="btn-close" (click)="cerrarModal()">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form [formGroup]="permisoForm" (ngSubmit)="guardarPermisos()">
-            <div class="permisos-header">
-              <h4>Usuarios con acceso</h4>
-              <div class="dropdown">
-                <button
-                  type="button"
-                  class="btn btn-outline btn-sm dropdown-toggle"
-                >
-                  Agregar usuario
-                </button>
-                <div class="dropdown-menu">
-                  <div
-                    *ngFor="let usuario of usuarios"
-                    class="dropdown-item"
-                    (click)="agregarUsuarioPermiso(usuario)"
-                  >
-                    {{ usuario.nombre_completo }}
-                  </div>
-                </div>
-              </div>
+          <div class="form-group">
+            <label for="descripcion" class="form-label">Descripción</label>
+            <textarea
+              id="descripcion"
+              formControlName="descripcion"
+              class="form-control"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="archivo" class="form-label">Archivo</label>
+            <input
+              type="file"
+              id="archivo"
+              (change)="onFileSelected($event)"
+              required
+              accept=".pdf,.docx,.xlsx"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="tipo_id" class="form-label">Tipo de documento</label>
+            <select
+              id="tipo_id"
+              formControlName="tipo_id"
+              class="form-control"
+              [class.is-invalid]="
+                documentoForm.get('tipo_id')?.invalid &&
+                documentoForm.get('tipo_id')?.touched
+              "
+            >
+              <option value="">Seleccionar tipo</option>
+              <option *ngFor="let tipo of tiposDocumento" [value]="tipo.id">
+                {{ tipo.nombre }}
+              </option>
+            </select>
+            <div
+              *ngIf="
+                documentoForm.get('tipo_id')?.invalid &&
+                documentoForm.get('tipo_id')?.touched
+              "
+              class="form-error"
+            >
+              El tipo de documento es obligatorio.
             </div>
+          </div>
 
-            <div formArrayName="usuarios">
-              <div
-                *ngFor="
-                  let permiso of usuariosPermisosArray.controls;
-                  let i = index
-                "
-                [formGroupName]="i"
-                class="permiso-row"
+          <div class="form-group">
+            <label for="area_id" class="form-label">Área</label>
+            <select
+              id="area_id"
+              formControlName="area_id"
+              class="form-control"
+              [class.is-invalid]="
+                documentoForm.get('area_id')?.invalid &&
+                documentoForm.get('area_id')?.touched
+              "
+            >
+              <option value="">Seleccionar área</option>
+              <option *ngFor="let area of areas" [value]="area.id">
+                {{ area.nombre }}
+              </option>
+            </select>
+            <div
+              *ngIf="
+                documentoForm.get('area_id')?.invalid &&
+                documentoForm.get('area_id')?.touched
+              "
+              class="form-error"
+            >
+              El área es obligatoria.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="checkbox-container">
+              <input
+                type="checkbox"
+                id="es_publico"
+                formControlName="es_publico"
+              />
+              <label for="es_publico" class="checkbox-label"
+                >Documento público</label
               >
-                <div class="permiso-user">
-                  <input type="hidden" formControlName="usuario_id" />
-                  <span>{{ permiso.get("nombre_usuario")?.value }}</span>
-                </div>
-                <div class="permiso-options">
-                  <div class="checkbox-container">
-                    <input
-                      type="checkbox"
-                      [id]="'puede_ver_' + i"
-                      formControlName="puede_ver"
-                    />
-                    <label [for]="'puede_ver_' + i" class="checkbox-label"
-                      >Ver</label
-                    >
-                  </div>
-                  <div class="checkbox-container">
-                    <input
-                      type="checkbox"
-                      [id]="'puede_editar_' + i"
-                      formControlName="puede_editar"
-                    />
-                    <label [for]="'puede_editar_' + i" class="checkbox-label"
-                      >Editar</label
-                    >
-                  </div>
-                  <div class="checkbox-container">
-                    <input
-                      type="checkbox"
-                      [id]="'puede_descargar_' + i"
-                      formControlName="puede_descargar"
-                    />
-                    <label [for]="'puede_descargar_' + i" class="checkbox-label"
-                      >Descargar</label
-                    >
-                  </div>
-                  <div class="checkbox-container">
-                    <input
-                      type="checkbox"
-                      [id]="'puede_eliminar_' + i"
-                      formControlName="puede_eliminar"
-                    />
-                    <label [for]="'puede_eliminar_' + i" class="checkbox-label"
-                      >Eliminar</label
-                    >
-                  </div>
-                  <button
-                    type="button"
-                    class="btn-icon btn-danger"
-                    (click)="eliminarUsuarioPermiso(i)"
-                  >
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
             </div>
+            <small class="text-muted"
+              >Los documentos públicos pueden ser vistos por todos los
+              usuarios.</small
+            >
+          </div>
 
-            <div *ngIf="usuariosPermisosArray.length === 0" class="no-permisos">
-              No hay permisos asignados. Agregue usuarios para gestionar sus
-              permisos.
-            </div>
-
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-outline"
-                (click)="cerrarModal()"
-              >
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary">
-                Guardar permisos
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal para gestionar metadatos -->
-    <div class="modal" *ngIf="isMetadatosModalOpen">
-      <div class="modal-backdrop" (click)="cerrarModal()"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Metadatos del documento</h3>
-          <button class="btn-close" (click)="cerrarModal()">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form [formGroup]="documentoForm" (ngSubmit)="guardarMetadatos()">
+          <div class="form-section">
+            <h4>Metadatos personalizados</h4>
             <div formArrayName="metadatos">
               <div
                 *ngFor="let metadato of metadatosArray.controls; let i = index"
@@ -659,21 +326,347 @@
                 <i class="fas fa-plus"></i> Agregar metadato
               </button>
             </div>
+          </div>
 
-            <div class="modal-footer">
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline"
+              (click)="cerrarModal()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="documentoForm.invalid"
+            >
+              {{ isEditing ? "Actualizar" : "Crear" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para gestionar versiones -->
+  <div class="modal" *ngIf="isVersionModalOpen">
+    <div class="modal-backdrop" (click)="cerrarModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Versiones del documento</h3>
+        <button class="btn-close" (click)="cerrarModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="currentDocumentoId">
+          <div class="version-list">
+            <h4>Historial de versiones</h4>
+            <div *ngIf="documentoSinVersiones" class="no-versions">
+              No hay versiones disponibles para este documento.
+            </div>
+            <div
+              *ngFor="let version of documentoActual?.versiones"
+              class="version-item"
+            >
+              <div class="version-header">
+                <div class="version-info">
+                  <span class="version-number">v{{ version.version }}</span>
+                  <span class="version-date">{{
+                    version.fecha_subida | date : "dd/MM/yyyy HH:mm"
+                  }}</span>
+                </div>
+                <div class="version-actions">
+                  <button
+                    class="btn-icon"
+                    title="Descargar versión"
+                    (click)="descargarVersion(version)"
+                    *ngIf="tienePermisoDescargar()"
+                  >
+                    <i class="fas fa-download"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="version-details">
+                <div class="version-file">
+                  <i class="fas fa-file-pdf"></i>
+                  {{ version.nombre_archivo || "documento.pdf" }}
+                </div>
+                <div class="version-user">
+                  <i class="fas fa-user"></i>
+                  {{ version.subido_por.username }}
+                </div>
+                <div class="version-comments" *ngIf="version.comentarios">
+                  <i class="fas fa-comment"></i> {{ version.comentarios }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="version-upload">
+            <h4>Subir nueva versión</h4>
+            <form [formGroup]="versionForm" (ngSubmit)="guardarVersion()">
+              <div class="form-group">
+                <label for="archivo" class="form-label">Archivo</label>
+                <div class="file-upload">
+                  <input
+                    type="file"
+                    id="archivo"
+                    formControlName="archivo"
+                    class="file-input"
+                    [class.is-invalid]="
+                      versionForm.get('archivo')?.invalid &&
+                      versionForm.get('archivo')?.touched
+                    "
+                  />
+                  <label for="archivo" class="file-label">
+                    <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivo
+                  </label>
+                </div>
+                <div
+                  *ngIf="
+                    versionForm.get('archivo')?.invalid &&
+                    versionForm.get('archivo')?.touched
+                  "
+                  class="form-error"
+                >
+                  El archivo es obligatorio.
+                </div>
+                <small class="text-muted"
+                  >Formatos permitidos: PDF, DOCX, XLSX (máx. 10MB)</small
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="comentarios" class="form-label">Comentarios</label>
+                <textarea
+                  id="comentarios"
+                  formControlName="comentarios"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Describa los cambios realizados en esta versión"
+                ></textarea>
+              </div>
+
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  (click)="cerrarModal()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="versionForm.invalid"
+                >
+                  Subir versión
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para gestionar permisos -->
+  <div class="modal" *ngIf="isPermisosModalOpen">
+    <div class="modal-backdrop" (click)="cerrarModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Permisos del documento</h3>
+        <button class="btn-close" (click)="cerrarModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="permisoForm" (ngSubmit)="guardarPermisos()">
+          <div class="permisos-header">
+            <h4>Usuarios con acceso</h4>
+            <div class="dropdown">
               <button
                 type="button"
-                class="btn btn-outline"
-                (click)="cerrarModal()"
+                class="btn btn-outline btn-sm dropdown-toggle"
+                (click)="abrirDropdown()"
               >
-                Cancelar
+                Agregar usuario
               </button>
-              <button type="submit" class="btn btn-primary">
-                Guardar metadatos
-              </button>
+              <div class="dropdown-menu" [class.show]="isDropdownOpen">
+                <div
+                  *ngFor="let usuario of this.usuarios"
+                  class="dropdown-item"
+                  (click)="agregarUsuarioPermiso(usuario)"
+                >
+                  {{ usuario.username }}
+                </div>
+              </div>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div formArrayName="usuarios">
+            <div
+              *ngFor="
+                let permiso of usuariosPermisosArray.controls;
+                let i = index
+              "
+              [formGroupName]="i"
+              class="permiso-row"
+            >
+              <div class="permiso-user">
+                <input type="hidden" formControlName="usuario_id" />
+                <span>{{ permiso.get("nombre_usuario")?.value }}</span>
+              </div>
+              <div class="permiso-options">
+                <div class="checkbox-container">
+                  <input
+                    type="checkbox"
+                    [id]="'puede_ver_' + i"
+                    formControlName="puede_ver"
+                  />
+                  <label [for]="'puede_ver_' + i" class="checkbox-label"
+                    >Ver</label
+                  >
+                </div>
+                <div class="checkbox-container">
+                  <input
+                    type="checkbox"
+                    [id]="'puede_editar_' + i"
+                    formControlName="puede_editar"
+                  />
+                  <label [for]="'puede_editar_' + i" class="checkbox-label"
+                    >Editar</label
+                  >
+                </div>
+                <div class="checkbox-container">
+                  <input
+                    type="checkbox"
+                    [id]="'puede_descargar_' + i"
+                    formControlName="puede_descargar"
+                  />
+                  <label [for]="'puede_descargar_' + i" class="checkbox-label"
+                    >Descargar</label
+                  >
+                </div>
+                <div class="checkbox-container">
+                  <input
+                    type="checkbox"
+                    [id]="'puede_eliminar_' + i"
+                    formControlName="puede_eliminar"
+                  />
+                  <label [for]="'puede_eliminar_' + i" class="checkbox-label"
+                    >Eliminar</label
+                  >
+                </div>
+                <button
+                  type="button"
+                  class="btn-icon btn-danger"
+                  (click)="eliminarUsuarioPermiso(i)"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="usuariosPermisosArray.length === 0" class="no-permisos">
+            No hay permisos asignados. Agregue usuarios para gestionar sus
+            permisos.
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline"
+              (click)="cerrarModal()"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Guardar permisos
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para gestionar metadatos -->
+  <div class="modal" *ngIf="isMetadatosModalOpen">
+    <div class="modal-backdrop" (click)="cerrarModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Metadatos del documento</h3>
+        <button class="btn-close" (click)="cerrarModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="documentoForm" (ngSubmit)="guardarMetadatos()">
+          <div formArrayName="metadatos">
+            <div
+              *ngFor="let metadato of metadatosArray.controls; let i = index"
+              [formGroupName]="i"
+              class="metadato-row"
+            >
+              <div class="metadato-fields">
+                <div class="form-group">
+                  <input
+                    type="text"
+                    formControlName="clave"
+                    class="form-control"
+                    placeholder="Clave"
+                    [class.is-invalid]="
+                      metadato.get('clave')?.invalid &&
+                      metadato.get('clave')?.touched
+                    "
+                  />
+                </div>
+                <div class="form-group">
+                  <input
+                    type="text"
+                    formControlName="valor"
+                    class="form-control"
+                    placeholder="Valor"
+                    [class.is-invalid]="
+                      metadato.get('valor')?.invalid &&
+                      metadato.get('valor')?.touched
+                    "
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="btn-icon btn-danger"
+                  (click)="eliminarMetadato(i)"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              (click)="agregarMetadato()"
+            >
+              <i class="fas fa-plus"></i> Agregar metadato
+            </button>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline"
+              (click)="cerrarModal()"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Guardar metadatos
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

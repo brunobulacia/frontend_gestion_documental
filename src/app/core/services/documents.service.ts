@@ -35,4 +35,14 @@ export class DocumentsService {
   getData() {
     return this.http.get<{areas: Area[], tipos_documento: TipoDocumento[], documentos: Documento[]}>(`${this.DOCS_URL}resumen/`);
   }
+
+  addNewVersion(doc_id: string, file: File) {
+    const formData = new FormData();
+  
+    formData.append('archivo', file);
+  
+    return this.http.post(`${this.DOCS_URL}${doc_id}/nueva-version/`, formData);
+  }
+
+  
 }

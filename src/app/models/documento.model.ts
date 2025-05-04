@@ -11,7 +11,6 @@ export interface TipoDocumento {
   export interface Usuario {
     id: number;
     username: string;
-    nombre_completo: string;
     email: string;
     rol?: string;
   }
