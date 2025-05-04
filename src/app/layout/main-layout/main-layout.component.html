@@ -1,0 +1,68 @@
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" [class.open]="sidebarOpen">
+      <div class="sidebar-header">
+        <h2>GestDoc</h2>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="sidebar-item">
+          <a routerLink="/dashboard" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/documents" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-file-alt"></i> Documentos
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/workflows" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-project-diagram"></i> Workflows
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/tasks" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-tasks"></i> Tareas
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/reports" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-chart-bar"></i> Reportes
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/settings" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-cog"></i> Configuración
+          </a>
+        </li>
+      </ul>
+    </aside>
+  
+    <!-- Main Content -->
+    <div class="main-content" [class.with-sidebar]="sidebarOpen">
+      <!-- Header -->
+      <header class="header">
+        <div class="navbar">
+          <div class="navbar-left">
+            <button class="btn-icon" (click)="toggleSidebar()">
+              <i class="fas fa-bars"></i>
+            </button>
+            <span class="navbar-brand">Sistema de Gestión Documental</span>
+          </div>
+          <div class="navbar-right">
+            <div class="user-menu">
+              <span class="user-name">Usuario</span>
+              <div class="avatar">
+                <i class="fas fa-user"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+  
+      <!-- Page Content -->
+      <main class="content">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>

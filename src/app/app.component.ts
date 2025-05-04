@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import MainLayoutComponent from './layout/main-layout/main-layout.component';
 import { RouterOutlet } from '@angular/router';
 
 @Component({

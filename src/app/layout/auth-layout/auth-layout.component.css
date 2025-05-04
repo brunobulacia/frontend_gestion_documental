@@ -1,0 +1,115 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--color-background);
+    padding: var(--spacing-md);
+  }
+  
+  .auth-card {
+    background-color: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 450px;
+    padding: var(--spacing-xl);
+  }
+  
+  .auth-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .auth-header h2 {
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .auth-tabs {
+    display: flex;
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-hover);
+  }
+  
+  .auth-tab {
+    flex: 1;
+    padding: var(--spacing-md);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-text-light);
+    transition: all var(--transition-fast);
+    position: relative;
+  }
+  
+  .auth-tab.active {
+    color: var(--color-secondary);
+  }
+  
+  .auth-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-secondary);
+  }
+  
+  .auth-form {
+    margin-top: var(--spacing-lg);
+  }
+  
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .form-label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-hover);
+    border-radius: var(--border-radius-sm);
+    transition: border-color var(--transition-fast);
+  }
+  
+  .form-control:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+  }
+  
+  .form-control.is-invalid {
+    border-color: var(--color-error);
+  }
+  
+  .form-error {
+    color: var(--color-error);
+    font-size: 0.85rem;
+    margin-top: var(--spacing-xs);
+  }
+  
+  .forgot-password {
+    color: var(--color-link);
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  
+  .forgot-password:hover {
+    text-decoration: underline;
+  }
+  
+  .btn-block {
+    width: 100%;
+    margin-top: var(--spacing-lg);
+  }
+  
+  .text-right {
+    text-align: right;
+  }

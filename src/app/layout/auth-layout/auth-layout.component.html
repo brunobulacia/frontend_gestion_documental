@@ -1,0 +1,147 @@
+<div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>Sistema de Gestión Documental</h2>
+        <p class="text-muted">Accede a tu cuenta para gestionar documentos y workflows</p>
+      </div>
+  
+      <!-- Tabs de navegación -->
+      <div class="auth-tabs">
+        <button 
+          class="auth-tab" 
+          [class.active]="activeTab === 'login'"
+          (click)="setActiveTab('login')">
+          Iniciar Sesión
+        </button>
+        <button 
+          class="auth-tab" 
+          [class.active]="activeTab === 'register'"
+          (click)="setActiveTab('register')">
+          Registrarse
+        </button>
+      </div>
+  
+      <!-- Mensajes de error y éxito -->
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+      <div *ngIf="successMessage" class="alert alert-success">
+        {{ successMessage }}
+      </div>
+  
+      <!-- Formulario de Login -->
+      <form *ngIf="activeTab === 'login'" [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="login-email" class="form-label">Usuario</label>
+          <input 
+            type="email" 
+            id="login-email" 
+            formControlName="username" 
+            class="form-control"
+            [class.is-invalid]="loginUsername?.invalid && (loginUsername?.dirty || loginUsername?.touched)"
+            placeholder="correo@ejemplo.com">
+          <div *ngIf="loginUsername?.invalid && (loginUsername?.dirty || loginUsername?.touched)" class="form-error">
+            <span *ngIf="loginUsername?.errors?.['required']">El correo electrónico es obligatorio.</span>
+            <span *ngIf="loginUsername?.errors?.['email']">Ingrese un correo electrónico válido.</span>
+          </div>
+        </div>
+  
+        <div class="form-group">
+          <label for="login-password" class="form-label">Contraseña</label>
+          <input 
+            type="password" 
+            id="login-password" 
+            formControlName="password" 
+            class="form-control"
+            [class.is-invalid]="loginPassword?.invalid && (loginPassword?.dirty || loginPassword?.touched)"
+            placeholder="Contraseña">
+          <div *ngIf="loginPassword?.invalid && (loginPassword?.dirty || loginPassword?.touched)" class="form-error">
+            <span *ngIf="loginPassword?.errors?.['required']">La contraseña es obligatoria.</span>
+            <span *ngIf="loginPassword?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</span>
+          </div>
+        </div>
+  
+        <div class="form-group text-right">
+          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+  
+        <button 
+          type="submit" 
+          class="btn btn-primary btn-block" 
+          [disabled]="loginForm.invalid || loading">
+          <span *ngIf="loading">Cargando...</span>
+          <span *ngIf="!loading">Iniciar Sesión</span>
+        </button>
+      </form>
+  
+      <!-- Formulario de Registro -->
+      <form *ngIf="activeTab === 'register'" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="register-username" class="form-label">Nombre de usuario</label>
+          <input 
+            type="text" 
+            id="register-username" 
+            formControlName="username" 
+            class="form-control"
+            [class.is-invalid]="registerUsername?.invalid && (registerUsername?.dirty || registerUsername?.touched)"
+            placeholder="Nombre de usuario">
+          <div *ngIf="registerUsername?.invalid && (registerUsername?.dirty || registerUsername?.touched)" class="form-error">
+            <span *ngIf="registerUsername?.errors?.['required']">El nombre de usuario es obligatorio.</span>
+          </div>
+        </div>
+  
+        <div class="form-group">
+          <label for="register-email" class="form-label">Correo electrónico</label>
+          <input 
+            type="email" 
+            id="register-email" 
+            formControlName="email" 
+            class="form-control"
+            [class.is-invalid]="registerEmail?.invalid && (registerEmail?.dirty || registerEmail?.touched)"
+            placeholder="correo@ejemplo.com">
+          <div *ngIf="registerEmail?.invalid && (registerEmail?.dirty || registerEmail?.touched)" class="form-error">
+            <span *ngIf="registerEmail?.errors?.['required']">El correo electrónico es obligatorio.</span>
+            <span *ngIf="registerEmail?.errors?.['email']">Ingrese un correo electrónico válido.</span>
+          </div>
+        </div>
+  
+        <div class="form-group">
+          <label for="register-password" class="form-label">Contraseña</label>
+          <input 
+            type="password" 
+            id="register-password" 
+            formControlName="password" 
+            class="form-control"
+            [class.is-invalid]="registerPassword?.invalid && (registerPassword?.dirty || registerPassword?.touched)"
+            placeholder="Contraseña">
+          <div *ngIf="registerPassword?.invalid && (registerPassword?.dirty || registerPassword?.touched)" class="form-error">
+            <span *ngIf="registerPassword?.errors?.['required']">La contraseña es obligatoria.</span>
+            <span *ngIf="registerPassword?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</span>
+          </div>
+        </div>
+  
+        <div class="form-group">
+          <label for="register-confirm-password" class="form-label">Confirmar contraseña</label>
+          <input 
+            type="password" 
+            id="register-confirm-password" 
+            formControlName="confirmPassword" 
+            class="form-control"
+            [class.is-invalid]="registerConfirmPassword?.invalid && (registerConfirmPassword?.dirty || registerConfirmPassword?.touched) || registerForm.hasError('notSame')"
+            placeholder="Confirmar contraseña">
+          <div *ngIf="(registerConfirmPassword?.invalid && (registerConfirmPassword?.dirty || registerConfirmPassword?.touched)) || registerForm.hasError('notSame')" class="form-error">
+            <span *ngIf="registerConfirmPassword?.errors?.['required']">Confirmar la contraseña es obligatorio.</span>
+            <span *ngIf="registerForm.hasError('notSame')">Las contraseñas no coinciden.</span>
+          </div>
+        </div>
+  
+        <button 
+          type="submit" 
+          class="btn btn-primary btn-block" 
+          [disabled]="registerForm.invalid || loading">
+          <span *ngIf="loading">Cargando...</span>
+          <span *ngIf="!loading">Registrarse</span>
+        </button>
+      </form>
+    </div>
+  </div>
