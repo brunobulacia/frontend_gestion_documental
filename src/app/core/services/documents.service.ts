@@ -47,4 +47,5 @@ export class DocumentsService {
   downloadDoc(ver_id: number) {
     return this.http.get(`${this.DOCS_URL}descargar/${ver_id}`, { responseType: 'blob' });
   }
+  
 }
