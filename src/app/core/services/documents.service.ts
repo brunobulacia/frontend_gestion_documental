@@ -44,5 +44,7 @@ export class DocumentsService {
     return this.http.post(`${this.DOCS_URL}${doc_id}/nueva-version/`, formData);
   }
 
-  
+  downloadDoc(ver_id: number) {
+    return this.http.get(`${this.DOCS_URL}descargar/${ver_id}`, { responseType: 'blob' });
+  }
 }

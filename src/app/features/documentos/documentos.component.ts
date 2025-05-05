@@ -14,6 +14,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../core/services/documents.service';
 import { UsersService } from '../../core/services/users.service';
+import { saveAs } from 'file-saver';
 
 @Component({
   standalone: true,
@@ -36,7 +37,7 @@ export default class DocumentosComponent implements OnInit {
   isMetadatosModalOpen = false;
 
   isDropdownOpen = false;
-  
+
   isEditing = false;
   currentDocumentoId: string | null = null;
   currentVersion: DocumentoVersion | null = null;
@@ -196,7 +197,7 @@ export default class DocumentosComponent implements OnInit {
         );
       });
     }
-    
+
     this.isPermisosModalOpen = true;
 
 
@@ -480,8 +481,13 @@ export default class DocumentosComponent implements OnInit {
   }
 
   descargarVersion(version: DocumentoVersion): void {
-    // TODO
-    alert(`Descargando: ${version.nombre_archivo || 'documento.pdf'}`);
+    this.documentosService.downloadDoc(version.id).subscribe({
+      next: (blob: Blob) => {
+        saveAs(blob, version.nombre_archivo);
+      }, error: (err) => {
+        console.error('Error al descargar archivo:', err);
+      }
+    })
   }
 
   get documentoActual(): Documento | undefined {
