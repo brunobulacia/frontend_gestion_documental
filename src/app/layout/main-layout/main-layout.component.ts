@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -11,7 +12,9 @@ import { RouterOutlet } from '@angular/router';
 export default class MainLayoutComponent implements OnInit {
   sidebarOpen = true;
 
-  constructor() { }
+  constructor(
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.checkScreenSize();
@@ -24,5 +27,9 @@ export default class MainLayoutComponent implements OnInit {
 
   private checkScreenSize(): void {
     this.sidebarOpen = window.innerWidth > 768;
+  }
+
+  logout(): void {
+    this.authService.logout();
   }
 }
