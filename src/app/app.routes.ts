@@ -3,6 +3,7 @@ import MainLayoutComponent from './layout/main-layout/main-layout.component';
 import AuthLayoutComponent from './layout/auth-layout/auth-layout.component';
 import { authGuard } from './core/guards/auth.guard';
 import DocumentsComponent from './features/documentos/documentos.component';
+import DashboardComponent from './features/dashboard/dashboard.component';
 
 export const routes: Routes = [
     {
@@ -10,8 +11,8 @@ export const routes: Routes = [
       component: MainLayoutComponent,
       canActivate: [authGuard],
       children: [
-        { path: '', redirectTo: 'documents', pathMatch: 'full' },
-        //{ path: 'dashboard', component: DashboardComponent },
+        { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+        { path: 'dashboard', component: DashboardComponent },
         { path: 'documents', component: DocumentsComponent }
       ]
     },

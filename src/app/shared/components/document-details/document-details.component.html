@@ -1,0 +1,225 @@
+<div class="modal" *ngIf="visible">
+    <div class="modal-backdrop" (click)="closeModal()"></div>
+    <div class="modal-content">
+      <!-- Cabecera de la modal -->
+      <div class="modal-header">
+        <h3>{{ documento?.titulo }}</h3>
+        <button class="btn-close" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- Navegación por pestañas -->
+      <div class="modal-tabs">
+        <button 
+          class="modal-tab" 
+          [class.active]="activeTab === 'info'" 
+          (click)="setActiveTab('info')">
+          <i class="fas fa-info-circle"></i> Información
+        </button>
+        <button 
+          class="modal-tab" 
+          [class.active]="activeTab === 'versiones'" 
+          (click)="setActiveTab('versiones')">
+          <i class="fas fa-code-branch"></i> Versiones
+          <span class="badge" *ngIf="documento?.versiones?.length">{{ documento?.versiones?.length }}</span>
+        </button>
+        <button 
+          class="modal-tab" 
+          [class.active]="activeTab === 'metadatos'" 
+          (click)="setActiveTab('metadatos')">
+          <i class="fas fa-tags"></i> Metadatos
+          <span class="badge" *ngIf="documento?.metadatos?.length">{{ documento?.metadatos?.length }}</span>
+        </button>
+        <button 
+          class="modal-tab" 
+          [class.active]="activeTab === 'permisos'" 
+          (click)="setActiveTab('permisos')">
+          <i class="fas fa-user-lock"></i> Permisos
+          <span class="badge" *ngIf="documento?.permisos?.length">{{ documento?.permisos?.length }}</span>
+        </button>
+      </div>
+      
+      <!-- Cuerpo de la modal -->
+      <div class="modal-body">
+        <!-- Pestaña de información -->
+        <div class="tab-content" *ngIf="activeTab === 'info'">
+          <div class="document-info-grid">
+            <div class="info-group">
+              <h4>Información básica</h4>
+              <div class="info-row">
+                <span class="info-label">Título:</span>
+                <span class="info-value">{{ documento?.titulo }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Descripción:</span>
+                <span class="info-value">{{ documento?.descripcion }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Tipo:</span>
+                <span class="info-value">{{ documento?.tipo?.nombre || 'No especificado' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Área:</span>
+                <span class="info-value">{{ documento?.area?.nombre || 'No especificada' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Visibilidad:</span>
+                <span class="info-value">
+                  <span class="badge" [class.badge-success]="documento?.es_publico" [class.badge-warning]="!documento?.es_publico">
+                    {{ documento?.es_publico ? 'Público' : 'Privado' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+            
+            <div class="info-group">
+              <h4>Fechas</h4>
+              <div class="info-row">
+                <span class="info-label">Creado:</span>
+                <span class="info-value">{{ documento?.fecha_creacion ? formatearFecha(documento.fecha_creacion) : 'No disponible' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Modificado:</span>
+                <span class="info-value">{{ documento?.fecha_modificacion ? formatearFecha(documento.fecha_modificacion) : 'No disponible' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Creado por:</span>
+                <span class="info-value">{{ documento?.creado_por?.username || 'Desconocido' }}</span>
+              </div>
+            </div>
+            
+            <div class="info-group full-width">
+              <h4>Última versión</h4>
+              <div class="version-preview" *ngIf="documento?.versiones && documento.versiones!.length > 0">
+                <div class="version-preview-header">
+                  <span class="version-number">Versión {{ documento.versiones![0].version }}</span>
+                  <span class="version-date">{{ formatearFecha(documento.versiones![0].fecha_subida) }}</span>
+                </div>
+                <div class="version-preview-content">
+                  <div class="version-preview-info">
+                    <div><i class="fas fa-user"></i> {{ documento.versiones![0].subido_por.username }}</div>
+                    <div><i class="fas fa-file"></i> {{ documento.versiones![0].nombre_archivo || 'Archivo' }}</div>
+                  </div>
+                  <div class="version-preview-actions">
+                    <button class="btn btn-sm btn-outline" (click)="verVersion(documento.versiones![0])">
+                      <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-primary" (click)="descargarVersion(documento.versiones![0])">
+                      <i class="fas fa-download"></i> Descargar
+                    </button>
+                  </div>
+                </div>
+                <div class="version-preview-comments" *ngIf="documento.versiones![0].comentarios">
+                  <i class="fas fa-comment"></i> {{ documento.versiones![0].comentarios }}
+                </div>
+              </div>
+              <div class="empty-state" *ngIf="!documento?.versiones || documento.versiones!.length === 0">
+                <i class="fas fa-file-alt empty-icon"></i>
+                <p>No hay versiones disponibles</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Pestaña de versiones -->
+        <div class="tab-content" *ngIf="activeTab === 'versiones'">
+          <h4>Historial de versiones</h4>
+          <div class="version-list" *ngIf="documento?.versiones && documento.versiones!.length > 0">
+            <div class="version-item" *ngFor="let version of documento.versiones">
+              <div class="version-header">
+                <div class="version-info">
+                  <span class="version-number">Versión {{ version.version }}</span>
+                  <span class="version-date">{{ formatearFecha(version.fecha_subida) }}</span>
+                </div>
+                <div class="version-actions">
+                  <button class="btn-icon" title="Ver versión" (click)="verVersion(version)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn-icon" title="Descargar versión" (click)="descargarVersion(version)">
+                    <i class="fas fa-download"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="version-details">
+                <div class="version-file">
+                  <i class="fas fa-file"></i> {{ version.nombre_archivo || 'Archivo' }}
+                </div>
+                <div class="version-user">
+                  <i class="fas fa-user"></i> Subido por: {{ version.subido_por.username }}
+                </div>
+                <div class="version-comments" *ngIf="version.comentarios">
+                  <i class="fas fa-comment"></i> {{ version.comentarios }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!documento?.versiones || documento.versiones!.length === 0">
+            <i class="fas fa-file-alt empty-icon"></i>
+            <p>No hay versiones disponibles</p>
+          </div>
+        </div>
+        
+        <!-- Pestaña de metadatos -->
+        <div class="tab-content" *ngIf="activeTab === 'metadatos'">
+          <div class="metadatos-header">
+            <h4>Metadatos personalizados</h4>
+          </div>
+          <div class="metadatos-list" *ngIf="documento?.metadatos && documento.metadatos!.length > 0">
+            <div class="metadato-item" *ngFor="let metadato of documento.metadatos">
+              <div class="metadato-key">{{ metadato.clave }}</div>
+              <div class="metadato-value">{{ metadato.valor }}</div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!documento?.metadatos || documento.metadatos!.length === 0">
+            <i class="fas fa-tags empty-icon"></i>
+            <p>No hay metadatos disponibles</p>
+          </div>
+        </div>
+        
+        <!-- Pestaña de permisos -->
+        <div class="tab-content" *ngIf="activeTab === 'permisos'">
+          <div class="permisos-header">
+            <h4>Permisos de acceso</h4>
+          </div>
+          <div class="permisos-list" *ngIf="documento?.permisos && documento.permisos!.length > 0">
+            <div class="permiso-item" *ngFor="let permiso of documento.permisos">
+              <div class="permiso-user">
+                <i class="fas fa-user"></i> {{ permiso.usuario.username }}
+                <span class="user-role" *ngIf="permiso.usuario.rol">({{ permiso.usuario.rol }})</span>
+              </div>
+              <div class="permiso-options">
+                <span class="permiso-option" [class.active]="permiso.puede_ver">
+                  <i class="fas" [ngClass]="permiso.puede_ver ? 'fa-check-circle' : 'fa-times-circle'"></i> Ver
+                </span>
+                <span class="permiso-option" [class.active]="permiso.puede_editar">
+                  <i class="fas" [ngClass]="permiso.puede_editar ? 'fa-check-circle' : 'fa-times-circle'"></i> Editar
+                </span>
+                <span class="permiso-option" [class.active]="permiso.puede_descargar">
+                  <i class="fas" [ngClass]="permiso.puede_descargar ? 'fa-check-circle' : 'fa-times-circle'"></i> Descargar
+                </span>
+                <span class="permiso-option" [class.active]="permiso.puede_eliminar">
+                  <i class="fas" [ngClass]="permiso.puede_eliminar ? 'fa-check-circle' : 'fa-times-circle'"></i> Eliminar
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!documento?.permisos || documento.permisos!.length === 0">
+            <i class="fas fa-user-lock empty-icon"></i>
+            <p>No hay permisos configurados</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Pie de la modal -->
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModal()">Cerrar</button>
+        <button class="btn btn-danger" *ngIf="puedeEliminar" (click)="eliminarDocumento()">
+          <i class="fas fa-trash"></i> Eliminar
+        </button>
+        <button class="btn btn-primary" *ngIf="puedeEditar" (click)="editarDocumento()">
+          <i class="fas fa-edit"></i> Editar
+        </button>
+      </div>
+    </div>
+  </div>

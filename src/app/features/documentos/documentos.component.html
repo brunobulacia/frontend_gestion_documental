@@ -93,6 +93,7 @@
               <button
                 class="btn-icon"
                 title="Ver detalles"
+                (click)="verDetallesDocumento(documento)"
                 *ngIf="tienePermiso(documento, 'ver')"
               >
                 <i class="fas fa-eye"></i>
@@ -413,12 +414,9 @@
                   <input
                     type="file"
                     id="archivo"
-                    formControlName="archivo"
                     class="file-input"
-                    [class.is-invalid]="
-                      versionForm.get('archivo')?.invalid &&
-                      versionForm.get('archivo')?.touched
-                    "
+                    (change)="onFileChange($event)"
+                    required
                   />
                   <label for="archivo" class="file-label">
                     <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivo
@@ -517,7 +515,7 @@
             >
               <div class="permiso-user">
                 <input type="hidden" formControlName="usuario_id" />
-                <span>{{ permiso.get("nombre_usuario")?.value }}</span>
+                <span>{{ permiso.get("username")?.value }}</span>
               </div>
               <div class="permiso-options">
                 <div class="checkbox-container">
@@ -671,3 +669,9 @@
     </div>
   </div>
 </div>
+<app-document-details
+  [documento]="selectedDocument"
+  [visible]="modalVisible"
+  (close)="closeModal()"
+>
+</app-document-details>

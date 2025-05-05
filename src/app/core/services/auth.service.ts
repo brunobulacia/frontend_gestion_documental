@@ -41,6 +41,7 @@ export class AuthService {
 
   logout() {
     localStorage.removeItem('token');
+    window.location.reload();
   }
 
   get token() {
@@ -56,6 +57,9 @@ export class AuthService {
     const expirationDate = new Date(payload.exp * 1000);
 
     const isExpired = expirationDate < new Date();
+    if (isExpired) {
+      this.logout();
+    }
     this.loggedIn.next(!isExpired);
     return !isExpired;
   }

@@ -14,10 +14,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { DocumentsService } from '../../core/services/documents.service';
 import { UsersService } from '../../core/services/users.service';
+import { saveAs } from 'file-saver';
+import { DocumentDetailModalComponent } from '../../shared/components/document-details/document-details.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, DocumentDetailModalComponent],
   selector: 'app-documents',
   templateUrl: './documentos.component.html',
   styleUrls: ['./documentos.component.css']
@@ -36,7 +38,7 @@ export default class DocumentosComponent implements OnInit {
   isMetadatosModalOpen = false;
 
   isDropdownOpen = false;
-  
+
   isEditing = false;
   currentDocumentoId: string | null = null;
   currentVersion: DocumentoVersion | null = null;
@@ -58,6 +60,28 @@ export default class DocumentosComponent implements OnInit {
     rol: 'Administrador'
   };
 
+  selectedFile: File | null = null;
+
+  selectedDocument: Documento = {
+    id: '',
+    titulo: '',
+    descripcion: '',
+    es_publico: false,
+    versiones: [],
+    metadatos: [],
+    permisos: [],
+    fecha_creacion: new Date(),
+    fecha_modificacion: new Date(),
+    creado_por: {
+      id: 0,
+      username: '',
+      email: ''
+    },
+    tipo: null,
+    area: null
+  };;
+  modalVisible: boolean = false;
+
   cargando: boolean = true;
   constructor(private fb: FormBuilder, private documentosService: DocumentsService, private usersService: UsersService) {
     this.documentoForm = this.fb.group({
@@ -70,7 +94,6 @@ export default class DocumentosComponent implements OnInit {
     });
 
     this.versionForm = this.fb.group({
-      archivo: [null, [Validators.required]],
       comentarios: ['']
     });
 
@@ -90,6 +113,7 @@ export default class DocumentosComponent implements OnInit {
   }
 
   get usuariosPermisosArray() {
+    console.log(this.permisoForm.get('usuarios'));
     return this.permisoForm.get('usuarios') as FormArray;
   }
 
@@ -111,9 +135,19 @@ export default class DocumentosComponent implements OnInit {
   // TODO Agregar un usuario a los permisos
   agregarUsuarioPermiso(usuario: Usuario, puede_ver: boolean = true, puede_editar: boolean = false,
     puede_descargar: boolean = false, puede_eliminar: boolean = false) {
+  
+    const yaExiste = this.usuariosPermisosArray.controls.some(control =>
+      control.get('usuario_id')?.value === usuario.id
+    );
+  
+    if (yaExiste) {
+      return; // Evita duplicados
+    }
+  
     this.usuariosPermisosArray.push(
       this.fb.group({
         usuario_id: [usuario.id, Validators.required],
+        username: [usuario.username], // 👈 Agregado
         puede_ver: [puede_ver],
         puede_editar: [puede_editar],
         puede_descargar: [puede_descargar],
@@ -121,6 +155,7 @@ export default class DocumentosComponent implements OnInit {
       })
     );
   }
+  
 
   // TODO Eliminar un usuario de los permisos
   eliminarUsuarioPermiso(index: number) {
@@ -176,10 +211,7 @@ export default class DocumentosComponent implements OnInit {
 
   abrirModalPermisos(documento: Documento): void {
     this.currentDocumentoId = documento.id;
-    console.log('modal abierta')
-    console.log(this.usuarios)
 
-    // Limpiar permisos existentes
     while (this.usuariosPermisosArray.length) {
       this.usuariosPermisosArray.removeAt(0);
     }
@@ -196,7 +228,7 @@ export default class DocumentosComponent implements OnInit {
         );
       });
     }
-    
+
     this.isPermisosModalOpen = true;
 
 
@@ -277,10 +309,13 @@ export default class DocumentosComponent implements OnInit {
       if (this.archivoSeleccionado) {
         this.documentosService.addDoc(nuevoDocumento, this.archivoSeleccionado).subscribe({
           next: () => {
+            alert('Documento creado conxito');
+            window.location.reload();
             this.cerrarModal();
             //this.documentos.unshift(nuevoDocumento);
           },
           error: (err) => {
+            alert('Error al crear documento');
             console.error('Error al crear documento:', err);
           }
         });;
@@ -314,44 +349,37 @@ export default class DocumentosComponent implements OnInit {
     }
   }
 
-  // TODO Guardar versión
+
   guardarVersion(): void {
-    if (this.versionForm.invalid || !this.currentDocumentoId) {
+    if (this.versionForm.invalid || !this.currentDocumentoId || !this.selectedFile) {
+      console.log("error");
+      console.log(this.versionForm.value);
       return;
     }
-
+    console.log(this.versionForm.value);
     const formValues = this.versionForm.value;
-    const documento = this.documentos.find(doc => doc.id === this.currentDocumentoId);
-
-    if (!documento) {
-      return;
-    }
-
-    // Determinar el número de versión
-    const ultimaVersion = documento.versiones && documento.versiones.length > 0
-      ? Math.max(...documento.versiones.map(v => v.version))
-      : 0;
-
-    const nuevaVersion: DocumentoVersion = {
-      id: Math.floor(Math.random() * 1000) + 10, // ID aleatorio para simulación
-      documento_id: this.currentDocumentoId,
-      archivo: '/documentos/ejemplo.pdf', // En una aplicación real, aquí iría la ruta del archivo subido
-      version: ultimaVersion + 1,
-      subido_por: this.currentUser,
-      fecha_subida: new Date(),
-      comentarios: formValues.comentarios,
-      nombre_archivo: formValues.archivo.name || `documento_v${ultimaVersion + 1}.pdf`
-    };
-
-    if (!documento.versiones) {
-      documento.versiones = [];
-    }
-
-    documento.versiones.unshift(nuevaVersion);
-    documento.fecha_modificacion = new Date();
-
-    this.cerrarModal();
+    this.documentosService.addNewVersion(this.currentDocumentoId, this.selectedFile).subscribe({
+      next: (res) => {
+        console.log('Documento subido', res);
+        this.cerrarModal();
+      },
+      error: (err) => {
+        console.error('Error al subir el documento', err);
+      }
+    });
   }
+
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+      console.log('Archivo seleccionado:', this.selectedFile.name); // <- para verificar
+    } else {
+      this.selectedFile = null;
+    }
+  }
+
 
   // TODO Guardar permisos
   guardarPermisos(): void {
@@ -480,8 +508,13 @@ export default class DocumentosComponent implements OnInit {
   }
 
   descargarVersion(version: DocumentoVersion): void {
-    // TODO
-    alert(`Descargando: ${version.nombre_archivo || 'documento.pdf'}`);
+    this.documentosService.downloadDoc(version.id).subscribe({
+      next: (blob: Blob) => {
+        saveAs(blob, version.nombre_archivo);
+      }, error: (err) => {
+        console.error('Error al descargar archivo:', err);
+      }
+    })
   }
 
   get documentoActual(): Documento | undefined {
@@ -506,5 +539,14 @@ export default class DocumentosComponent implements OnInit {
 
   abrirDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  verDetallesDocumento(documento: Documento) {
+    this.selectedDocument = documento;
+    this.modalVisible = true;
+  }
+
+  closeModal() {
+    this.modalVisible = false;
   }
 }
