@@ -1,0 +1,79 @@
+<div class="workflow-container">
+    <div class="workflow-header">
+      <div class="header-title">
+        <h1>Flujos de Trabajo</h1>
+        <p>Gestione los flujos de trabajo para automatizar procesos documentales</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" (click)="crearNuevoFlujo()">
+          <i class="fas fa-plus"></i> Nuevo Flujo
+        </button>
+      </div>
+    </div>
+  
+    <div class="workflow-content" *ngIf="!cargando; else loadingTemplate">
+      <div class="workflow-card" *ngIf="error">
+        <div class="error-message">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>{{ error }}</p>
+          <button class="btn btn-outline" (click)="cargarFlujos()">Reintentar</button>
+        </div>
+      </div>
+  
+      <div class="workflow-list" *ngIf="!error">
+        <div class="empty-state" *ngIf="flujos.length === 0">
+          <i class="fas fa-project-diagram empty-icon"></i>
+          <h3>No hay flujos de trabajo</h3>
+          <p>Cree un nuevo flujo de trabajo para comenzar a automatizar sus procesos documentales.</p>
+          <button class="btn btn-primary" (click)="crearNuevoFlujo()">
+            <i class="fas fa-plus"></i> Crear Flujo de Trabajo
+          </button>
+        </div>
+  
+        <div class="workflow-card" *ngFor="let flujo of flujos">
+          <div class="workflow-card-header">
+            <h3>{{ flujo.nombre }}</h3>
+            <div class="workflow-card-actions">
+              <button class="btn-icon" title="Ver flujo" (click)="verFlujo(flujo.id!)">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-icon" title="Editar flujo" (click)="editarFlujo(flujo.id!)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-icon" title="Eliminar flujo" (click)="eliminarFlujo(flujo.id!)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="workflow-card-content">
+            <p class="workflow-description">{{ flujo.descripcion || 'Sin descripción' }}</p>
+            <div class="workflow-meta">
+              <div class="workflow-meta-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ flujo.fecha_creacion | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="workflow-meta-item">
+                <i class="fas fa-user"></i>
+                <span>{{ flujo.creado_por?.username || 'Usuario desconocido' }}</span>
+              </div>
+              <div class="workflow-meta-item">
+                <i class="fas fa-file-alt"></i>
+                <span>{{ flujo.tipo_documento.nombre || 'Tipo no asignado' }}</span>
+              </div>
+              <div class="workflow-meta-item">
+                <i class="fas fa-circle" [ngClass]="flujo.activo ? 'text-success' : 'text-danger'"></i>
+                <span>{{ flujo.activo ? 'Activo' : 'Inactivo' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <ng-template #loadingTemplate>
+      <div class="loading-container">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Cargando flujos de trabajo...</p>
+      </div>
+    </ng-template>
+  </div>

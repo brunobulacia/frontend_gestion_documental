@@ -1,0 +1,266 @@
+<div class="workflow-editor-container">
+  <div class="workflow-editor-header">
+    <div class="header-title">
+      <h1>
+        {{ flujoId ? (modoVisualizacion ? "Ver" : "Editar") : "Nuevo" }} Flujo
+        de Trabajo
+      </h1>
+      <p>
+        {{
+          modoVisualizacion
+            ? "Visualice los detalles del flujo de trabajo"
+            : "Diseñe y configure su flujo de trabajo"
+        }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="cancelar()">
+        <i class="fas fa-arrow-left"></i> Volver
+      </button>
+      <button
+        class="btn btn-primary"
+        *ngIf="!modoVisualizacion"
+        (click)="guardarFlujo()"
+        [disabled]="guardando"
+      >
+        <i
+          class="fas"
+          [ngClass]="guardando ? 'fa-spinner fa-spin' : 'fa-save'"
+        ></i>
+        Guardar
+      </button>
+      <button class="btn btn-outline" *ngIf="flujoId" (click)="validarFlujo()">
+        <i class="fas fa-check-circle"></i> Validar
+      </button>
+    </div>
+  </div>
+
+  <div class="workflow-editor-content" *ngIf="!cargando; else loadingTemplate">
+    <div class="error-message" *ngIf="error">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>{{ error }}</p>
+    </div>
+
+    <div class="workflow-editor-form">
+      <form [formGroup]="flujoForm">
+        <div class="form-group">
+          <label for="nombre">Nombre del flujo</label>
+          <input
+            type="text"
+            id="nombre"
+            formControlName="nombre"
+            class="form-control"
+            [class.is-invalid]="
+              flujoForm.get('nombre')?.invalid &&
+              flujoForm.get('nombre')?.touched
+            "
+          />
+          <div
+            class="invalid-feedback"
+            *ngIf="
+              flujoForm.get('nombre')?.invalid &&
+              flujoForm.get('nombre')?.touched
+            "
+          >
+            El nombre es obligatorio
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="descripcion">Descripción</label>
+          <textarea
+            id="descripcion"
+            formControlName="descripcion"
+            class="form-control"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="tipo_documento">Tipo de documento</label>
+          <select
+            id="tipo_documento"
+            formControlName="tipo_documento"
+            class="form-control"
+            [class.is-invalid]="
+              flujoForm.get('tipo_documento')?.invalid &&
+              flujoForm.get('tipo_documento')?.touched
+            "
+          >
+            <option [ngValue]="null">Seleccione un tipo de documento</option>
+            <option *ngFor="let tipo of tiposDocumento" [ngValue]="tipo.id">
+              {{ tipo.nombre }}
+            </option>
+          </select>
+          <div
+            class="invalid-feedback"
+            *ngIf="
+              flujoForm.get('tipo_documento')?.invalid &&
+              flujoForm.get('tipo_documento')?.touched
+            "
+          >
+            El tipo de documento es obligatorio
+          </div>
+        </div>
+
+        <div class="form-group form-check">
+          <input
+            type="checkbox"
+            id="activo"
+            formControlName="activo"
+            class="form-check-input"
+          />
+          <label for="activo" class="form-check-label">Activo</label>
+        </div>
+      </form>
+    </div>
+
+    <div class="workflow-editor-diagram">
+      <div class="diagram-container">
+        <div #bpmnCanvas class="bpmn-canvas"></div>
+      </div>
+    </div>
+    
+    <div
+      class="workflow-editor-properties"
+      *ngIf="elementoSeleccionado || transicionSeleccionada"
+    >
+      <div class="properties-header">
+        <h3>Propiedades</h3>
+      </div>
+
+      <div class="properties-content">
+        <!-- Propiedades de elemento -->
+        <div *ngIf="elementoSeleccionado" class="element-properties">
+          <div class="form-group">
+            <label for="elemento-nombre">Nombre</label>
+            <input
+              type="text"
+              id="elemento-nombre"
+              [(ngModel)]="elementoSeleccionado.nombre"
+              class="form-control"
+              [disabled]="modoVisualizacion"
+              (change)="
+                actualizarElementoSeleccionado({
+                  nombre: elementoSeleccionado.nombre
+                })
+              "
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="elemento-tipo">Tipo</label>
+            <select
+              id="elemento-tipo"
+              [(ngModel)]="elementoSeleccionado.tipo"
+              class="form-control"
+              [disabled]="modoVisualizacion"
+              (change)="
+                actualizarElementoSeleccionado({
+                  tipo: elementoSeleccionado.tipo
+                })
+              "
+            >
+              <option *ngFor="let tipo of tiposElemento" [value]="tipo">
+                {{ tipo }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="elementoSeleccionado.tipo === 'TAREA'">
+            <label for="elemento-usuario">Asignado a usuario</label>
+            <select
+              id="elemento-usuario"
+              [(ngModel)]="elementoSeleccionado.asignado_a_usuario"
+              class="form-control"
+              [disabled]="modoVisualizacion"
+              (change)="
+                actualizarElementoSeleccionado({
+                  asignado_a_usuario: elementoSeleccionado.asignado_a_usuario
+                })
+              "
+            >
+              <option [ngValue]="null">Sin asignar</option>
+              <option *ngFor="let usuario of usuarios" [ngValue]="usuario.id">
+                {{ usuario.username }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="elementoSeleccionado.tipo === 'TAREA'">
+            <label for="elemento-rol">Asignado a rol</label>
+            <select
+              id="elemento-rol"
+              [(ngModel)]="elementoSeleccionado.asignado_a_rol"
+              class="form-control"
+              [disabled]="modoVisualizacion"
+              (change)="
+                actualizarElementoSeleccionado({
+                  asignado_a_rol: elementoSeleccionado.asignado_a_rol
+                })
+              "
+            >
+              <option [ngValue]="null">Sin asignar</option>
+              <option *ngFor="let rol of roles" [ngValue]="rol.id">
+                {{ rol.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <div
+            class="form-group"
+            *ngIf="elementoSeleccionado.tipo === 'DECISION'"
+          >
+            <label for="elemento-condicion">Condición</label>
+            <input
+              type="text"
+              id="elemento-condicion"
+              [(ngModel)]="elementoSeleccionado.condicion"
+              class="form-control"
+              [disabled]="modoVisualizacion"
+              (change)="
+                actualizarElementoSeleccionado({
+                  condicion: elementoSeleccionado.condicion
+                })
+              "
+            />
+            <small class="form-text text-muted"
+              >Defina la condición para la decisión (ej: "Documento
+              aprobado")</small
+            >
+          </div>
+        </div>
+
+        <!-- Propiedades de transición -->
+        <div *ngIf="transicionSeleccionada" class="transition-properties">
+          <div class="form-group">
+            <label for="transicion-condicion">Condición</label>
+            <input
+              type="text"
+              id="transicion-condicion"
+              [(ngModel)]="transicionSeleccionada.condicion"
+              class="form-control"
+              [disabled]="modoVisualizacion"
+              (change)="
+                actualizarTransicionSeleccionada({
+                  condicion: transicionSeleccionada.condicion
+                })
+              "
+            />
+            <small class="form-text text-muted"
+              >Defina la condición para la transición (ej: "Sí", "No")</small
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #loadingTemplate>
+    <div class="loading-container">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Cargando flujo de trabajo...</p>
+    </div>
+  </ng-template>
+</div>
+s

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import DocumentosComponent from './documentos.component';
+import { WorkflowEditorComponent } from './workflow-editor.component';
 
-describe('DocumentosComponent', () => {
-  let component: DocumentosComponent;
-  let fixture: ComponentFixture<DocumentosComponent>;
+describe('WorkflowEditorComponent', () => {
+  let component: WorkflowEditorComponent;
+  let fixture: ComponentFixture<WorkflowEditorComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DocumentosComponent]
+      imports: [WorkflowEditorComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(DocumentosComponent);
+    fixture = TestBed.createComponent(WorkflowEditorComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

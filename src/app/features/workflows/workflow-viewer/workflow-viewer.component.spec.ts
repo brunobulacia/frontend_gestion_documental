@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import DocumentosComponent from './documentos.component';
+import { WorkflowViewerComponent } from './workflow-viewer.component';
 
-describe('DocumentosComponent', () => {
-  let component: DocumentosComponent;
-  let fixture: ComponentFixture<DocumentosComponent>;
+describe('WorkflowViewerComponent', () => {
+  let component: WorkflowViewerComponent;
+  let fixture: ComponentFixture<WorkflowViewerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DocumentosComponent]
+      imports: [WorkflowViewerComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(DocumentosComponent);
+    fixture = TestBed.createComponent(WorkflowViewerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

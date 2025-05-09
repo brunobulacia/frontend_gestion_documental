@@ -1,0 +1,116 @@
+<div class="workflow-viewer-container">
+    <div class="workflow-viewer-header">
+      <div class="header-title">
+        <h1>{{ flujo?.nombre || 'Flujo de Trabajo' }}</h1>
+        <p>{{ flujo?.descripcion || 'Sin descripción' }}</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" (click)="volver()">
+          <i class="fas fa-arrow-left"></i> Volver
+        </button>
+        <button class="btn btn-primary" (click)="editarFlujo()">
+          <i class="fas fa-edit"></i> Editar
+        </button>
+      </div>
+    </div>
+  
+    <div class="workflow-viewer-content" *ngIf="!cargando; else loadingTemplate">
+      <div class="error-message" *ngIf="error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ error }}</p>
+        <button class="btn btn-outline" (click)="cargarFlujo(flujoId!)">Reintentar</button>
+      </div>
+  
+      <div class="workflow-viewer-info" *ngIf="!error && flujo">
+        <div class="info-card">
+          <div class="info-card-header">
+            <h3>Información del Flujo</h3>
+          </div>
+          <div class="info-card-content">
+            <div class="info-item">
+              <span class="info-label">Nombre:</span>
+              <span class="info-value">{{ flujo.nombre }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Tipo de documento:</span>
+              <span class="info-value">{{ flujo.tipo_documento.nombre || 'No asignado' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Creado por:</span>
+              <span class="info-value">{{ flujo.creado_por?.username || 'Desconocido' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Fecha de creación:</span>
+              <span class="info-value">{{ flujo.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Estado:</span>
+              <span class="info-value">
+                <span class="badge" [ngClass]="flujo.activo ? 'badge-success' : 'badge-danger'">
+                  {{ flujo.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+  
+        <div class="info-card">
+          <div class="info-card-header">
+            <h3>Elementos del Flujo</h3>
+          </div>
+          <div class="info-card-content">
+            <div class="elements-list" *ngIf="flujoCompleto?.elementos?.length ?? 0; else noElementsTemplate">
+              <div class="element-item" *ngFor="let elemento of flujoCompleto?.elementos">
+                <div class="element-icon" [ngClass]="'element-' + elemento.tipo.toLowerCase()">
+                  <i class="fas" 
+                     [ngClass]="{
+                       'fa-play-circle': elemento.tipo === 'INICIO',
+                       'fa-stop-circle': elemento.tipo === 'FIN',
+                       'fa-tasks': elemento.tipo === 'TAREA',
+                       'fa-question-circle': elemento.tipo === 'DECISION'
+                     }"></i>
+                </div>
+                <div class="element-info">
+                  <div class="element-name">{{ elemento.nombre }}</div>
+                  <div class="element-type">{{ elemento.tipo }}</div>
+                  <div class="element-assignment" *ngIf="elemento.tipo === 'TAREA'">
+                    <span *ngIf="elemento.asignado_a_usuario">
+                      <i class="fas fa-user"></i> {{ elemento.asignado_a_usuario.username || 'Usuario #' + elemento.asignado_a_usuario }}
+                    </span>
+                    <span *ngIf="elemento.asignado_a_rol">
+                      <i class="fas fa-users"></i> {{ elemento.asignado_a_rol.nombre || 'Rol #' + elemento.asignado_a_rol }}
+                    </span>
+                    <span *ngIf="!elemento.asignado_a_usuario && !elemento.asignado_a_rol">
+                      <i class="fas fa-exclamation-triangle"></i> Sin asignar
+                    </span>
+                  </div>
+                  <div class="element-condition" *ngIf="elemento.tipo === 'DECISION' && elemento.condicion">
+                    <i class="fas fa-code-branch"></i> {{ elemento.condicion }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noElementsTemplate>
+              <div class="empty-state">
+                <i class="fas fa-project-diagram empty-icon"></i>
+                <p>No hay elementos en este flujo de trabajo</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+  
+      <div class="workflow-viewer-diagram" *ngIf="!error">
+        <div class="diagram-container">
+          <div #bpmnCanvas class="bpmn-canvas"></div>
+        </div>
+      </div>
+    </div>
+  
+    <ng-template #loadingTemplate>
+      <div class="loading-container">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Cargando flujo de trabajo...</p>
+      </div>
+    </ng-template>
+  </div>
