@@ -639,8 +639,10 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       )
       .subscribe(flujoGuardado => {
         if (flujoGuardado) {
-          //this.flujoActual = flujoGuardado;
-          //this.flujoId = flujoGuardado.flujo.id!;
+          console.log('flujoGuardado:')
+          console.log(flujoGuardado);
+          this.flujoActual = flujoGuardado;
+          this.flujoId = flujoGuardado.flujo.id!;
 
           // Redirigimos a la página de edición si estamos creando un nuevo flujo
           if (!this.route.snapshot.paramMap.get('id')) {

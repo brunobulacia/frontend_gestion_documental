@@ -41,8 +41,20 @@ export class WorkflowService {
       );
   }
 
-  crearFlujo(flujo: FlujoTrabajo): Observable<FlujoTrabajo> {
-    return this.http.post<FlujoTrabajo>(`${this.WORKFLOWS_URL}/flujos/`, flujo);
+  crearFlujo(flujo: FlujoTrabajo): Observable<FlujoTrabajoCompleto> {
+    return this.http.post<FlujoTrabajoCompleto>(`${this.WORKFLOWS_URL}/flujos/`, flujo).pipe(
+      map(resultado => {
+        if ('elementos' in resultado) {
+          return resultado;
+        } else {
+          return {
+            flujo: resultado,
+            elementos: [],
+            transiciones: []
+          };
+        }
+      })
+    ) ;
   }
 
   actualizarFlujo(flujo: FlujoTrabajo): Observable<FlujoTrabajo> {
@@ -87,73 +99,76 @@ export class WorkflowService {
     return this.http.delete<void>(`${this.WORKFLOWS_URL}/transiciones/${id}/`);
   }
 
-  guardarFlujoCompleto(flujoCompleto: FlujoTrabajoCompleto) {
+  guardarFlujoCompleto(flujoCompleto: FlujoTrabajoCompleto): Observable<FlujoTrabajoCompleto> {
+    if (!flujoCompleto.flujo.id) {
+      return this.crearFlujo(flujoCompleto.flujo);
+    }
     flujoCompleto = this.fusionarElementosRepetidos(flujoCompleto);
     flujoCompleto = this.eliminarWaypoints(flujoCompleto);
-    console.log(flujoCompleto);
-    return this.http.post(`${this.WORKFLOWS_URL}/flujos/actualizar/`, flujoCompleto);
+    return this.http.post<FlujoTrabajoCompleto>(`${this.WORKFLOWS_URL}/flujos/actualizar/`, flujoCompleto);
   }
+
   // Método para guardar un flujo completo (flujo, elementos y transiciones)
-  guardarFlujoCompleto2(flujoCompleto: FlujoTrabajoCompleto): Observable<FlujoTrabajoCompleto> {
-    // Fusionamos elementos repetidos
-    flujoCompleto = this.fusionarElementosRepetidos(flujoCompleto);
-    // Guardamos o actualizamos el flujo
-    const flujoObs = flujoCompleto.flujo.id
-      ? this.actualizarFlujo(flujoCompleto.flujo)
-      : this.crearFlujo(flujoCompleto.flujo);
+  // guardarFlujoCompleto2(flujoCompleto: FlujoTrabajoCompleto): Observable<FlujoTrabajoCompleto> {
+  //   // Fusionamos elementos repetidos
+  //   flujoCompleto = this.fusionarElementosRepetidos(flujoCompleto);
+  //   // Guardamos o actualizamos el flujo
+  //   const flujoObs = flujoCompleto.flujo.id
+  //     ? this.actualizarFlujo(flujoCompleto.flujo)
+  //     : this.crearFlujo(flujoCompleto.flujo);
 
-    return new Observable<FlujoTrabajoCompleto>(observer => {
-      flujoObs.subscribe({
-        next: (flujoGuardado) => {
-          const flujoId = flujoGuardado.id!;
-          const elementosPromises = flujoCompleto.elementos.map((elemento: any) => {
-            elemento.flujo = flujoId;
-            return elemento.id
-              ? this.actualizarElemento(elemento).toPromise()
-              : this.crearElemento(elemento).toPromise();
-          });
+  //   return new Observable<FlujoTrabajoCompleto>(observer => {
+  //     flujoObs.subscribe({
+  //       next: (flujoGuardado) => {
+  //         const flujoId = flujoGuardado.id!;
+  //         const elementosPromises = flujoCompleto.elementos.map((elemento: any) => {
+  //           elemento.flujo = flujoId;
+  //           return elemento.id
+  //             ? this.actualizarElemento(elemento).toPromise()
+  //             : this.crearElemento(elemento).toPromise();
+  //         });
 
-          Promise.all(elementosPromises)
-            .then(elementosGuardados => {
-              // Mapa de IDs temporales a IDs reales
-              const elementosMap = new Map<number, number>();
-              elementosGuardados.forEach((elem: any, index: number) => {
-                if (elem && flujoCompleto.elementos[index].id) {
-                  elementosMap.set(flujoCompleto.elementos[index].id!, elem.id!);
-                }
-              });
+  //         Promise.all(elementosPromises)
+  //           .then(elementosGuardados => {
+  //             // Mapa de IDs temporales a IDs reales
+  //             const elementosMap = new Map<number, number>();
+  //             elementosGuardados.forEach((elem: any, index: number) => {
+  //               if (elem && flujoCompleto.elementos[index].id) {
+  //                 elementosMap.set(flujoCompleto.elementos[index].id!, elem.id!);
+  //               }
+  //             });
 
-              const transicionesPromises = flujoCompleto.transiciones.map((transicion: any) => {
-                // Actualizar referencias a elementos si es necesario
-                if (typeof transicion.origen === 'number' && elementosMap.has(transicion.origen)) {
-                  transicion.origen = elementosMap.get(transicion.origen)!;
-                }
-                if (typeof transicion.destino === 'number' && elementosMap.has(transicion.destino)) {
-                  transicion.destino = elementosMap.get(transicion.destino)!;
-                }
+  //             const transicionesPromises = flujoCompleto.transiciones.map((transicion: any) => {
+  //               // Actualizar referencias a elementos si es necesario
+  //               if (typeof transicion.origen === 'number' && elementosMap.has(transicion.origen)) {
+  //                 transicion.origen = elementosMap.get(transicion.origen)!;
+  //               }
+  //               if (typeof transicion.destino === 'number' && elementosMap.has(transicion.destino)) {
+  //                 transicion.destino = elementosMap.get(transicion.destino)!;
+  //               }
 
-                return transicion.id
-                  ? this.actualizarTransicion(transicion).toPromise()
-                  : this.crearTransicion(transicion).toPromise();
-              });
+  //               return transicion.id
+  //                 ? this.actualizarTransicion(transicion).toPromise()
+  //                 : this.crearTransicion(transicion).toPromise();
+  //             });
 
-              Promise.all(transicionesPromises)
-                .then(transicionesGuardadas => {
-                  observer.next({
-                    flujo: flujoGuardado,
-                    elementos: elementosGuardados as ElementoFlujo[],
-                    transiciones: transicionesGuardadas as TransicionFlujo[]
-                  });
-                  observer.complete();
-                })
-                .catch(error => observer.error(error));
-            })
-            .catch(error => observer.error(error));
-        },
-        error: (error) => observer.error(error)
-      });
-    });
-  }
+  //             Promise.all(transicionesPromises)
+  //               .then(transicionesGuardadas => {
+  //                 observer.next({
+  //                   flujo: flujoGuardado,
+  //                   elementos: elementosGuardados as ElementoFlujo[],
+  //                   transiciones: transicionesGuardadas as TransicionFlujo[]
+  //                 });
+  //                 observer.complete();
+  //               })
+  //               .catch(error => observer.error(error));
+  //           })
+  //           .catch(error => observer.error(error));
+  //       },
+  //       error: (error) => observer.error(error)
+  //     });
+  //   });
+  // }
 
   fusionarElementosRepetidos(flujo: FlujoTrabajoCompleto): FlujoTrabajoCompleto {
     if (!flujo) return flujo;

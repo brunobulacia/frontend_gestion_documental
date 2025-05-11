@@ -34,6 +34,7 @@ export class AuthService {
   login(username: string, password: string) {
     return this.http.post<AuthResponse>(`${this.USUARIOS_URL}/login/`, { username, password }).pipe(
       tap((res) => {
+        console.log(res);
         localStorage.setItem('token', res.access);
       })
     );
