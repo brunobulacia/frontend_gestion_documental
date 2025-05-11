@@ -19,7 +19,7 @@ export const routes: Routes = [
         { path: 'documents', component: DocumentsComponent },
         { path: 'workflows', component: WorkflowListComponent },
         { path: 'workflows/nuevo', component: WorkflowEditorComponent },
-        { path: 'workflows/editar/:id', component: WorkflowEditorComponent },
+        { path: 'workflows/editar/:id', component: WorkflowEditorComponent},
         { path: 'workflows/ver/:id', component: WorkflowViewerComponent },
       ]
     },
