@@ -48,4 +48,11 @@ export class DocumentsService {
     return this.http.get(`${this.DOCS_URL}descargar/${ver_id}`, { responseType: 'blob' });
   }
   
+  addMetadata(doc_id: string, metadata: any) {
+    return this.http.post(`${this.DOCS_URL}${doc_id}/agregar-metadatos/`, metadata);
+  }
+
+  getDocumentTypes() {
+    return this.http.get(`${this.DOCS_URL}tipos-documentos/`);
+  }
 }

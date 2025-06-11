@@ -100,11 +100,14 @@ export class WorkflowService {
   }
 
   guardarFlujoCompleto(flujoCompleto: FlujoTrabajoCompleto): Observable<FlujoTrabajoCompleto> {
+    flujoCompleto.flujo.tipo_documento_id = flujoCompleto.flujo.tipo_documento;
     if (!flujoCompleto.flujo.id) {
       return this.crearFlujo(flujoCompleto.flujo);
     }
     flujoCompleto = this.fusionarElementosRepetidos(flujoCompleto);
     flujoCompleto = this.eliminarWaypoints(flujoCompleto);
+    console.log('Flujo a enviar:')
+    console.log(flujoCompleto);
     return this.http.post<FlujoTrabajoCompleto>(`${this.WORKFLOWS_URL}/flujos/actualizar/`, flujoCompleto);
   }
 

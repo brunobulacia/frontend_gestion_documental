@@ -34,15 +34,14 @@
         <div class="form-group">
           <label for="login-email" class="form-label">Usuario</label>
           <input 
-            type="email" 
-            id="login-email" 
+            type="username" 
+            id="login-username" 
             formControlName="username" 
             class="form-control"
             [class.is-invalid]="loginUsername?.invalid && (loginUsername?.dirty || loginUsername?.touched)"
-            placeholder="correo@ejemplo.com">
+            placeholder="usuario">
           <div *ngIf="loginUsername?.invalid && (loginUsername?.dirty || loginUsername?.touched)" class="form-error">
-            <span *ngIf="loginUsername?.errors?.['required']">El correo electrónico es obligatorio.</span>
-            <span *ngIf="loginUsername?.errors?.['email']">Ingrese un correo electrónico válido.</span>
+            <span *ngIf="loginUsername?.errors?.['required']">El usuario es obligatorio.</span>
           </div>
         </div>
   

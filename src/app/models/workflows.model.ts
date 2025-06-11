@@ -29,6 +29,7 @@ export interface Usuario {
     nombre: string;
     descripcion: string;
     tipo_documento: TipoDocumento;
+    tipo_documento_id?: any; //Top trolleadas
     creado_por?: Usuario;
     fecha_creacion?: Date;
     activo: boolean;

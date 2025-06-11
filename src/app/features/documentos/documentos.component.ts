@@ -118,9 +118,10 @@ export default class DocumentosComponent implements OnInit {
   }
 
   // TODO Agregar un nuevo campo de metadato
-  agregarMetadato(clave: string = '', valor: string = '') {
+  agregarMetadato(clave: string = '', valor: string = '', id: number | null = null) {
     this.metadatosArray.push(
       this.fb.group({
+        id: [id],
         clave: [clave, Validators.required],
         valor: [valor, Validators.required]
       })
@@ -245,7 +246,7 @@ export default class DocumentosComponent implements OnInit {
     // Agregar metadatos existentes
     if (documento.metadatos && documento.metadatos.length > 0) {
       documento.metadatos.forEach(metadato => {
-        this.agregarMetadato(metadato.clave, metadato.valor);
+        this.agregarMetadato(metadato.clave, metadato.valor, metadato.id);
       });
     }
 
@@ -276,7 +277,7 @@ export default class DocumentosComponent implements OnInit {
     }
 
     const metadatos: MetadatoPersonalizado[] = formValues.metadatos.map((m: any, index: number) => ({
-      id: index + 1,
+      id: null,
       documento_id: this.currentDocumentoId || '',
       clave: m.clave,
       valor: m.valor
@@ -432,13 +433,25 @@ export default class DocumentosComponent implements OnInit {
 
     // Preparar metadatos
     const metadatos: MetadatoPersonalizado[] = formValues.metadatos.map((m: any, index: number) => ({
-      id: index + 1,
+      id: m.id ?? null,
       documento_id: this.currentDocumentoId || '',
       clave: m.clave,
       valor: m.valor
     }));
-
-    documento.metadatos = metadatos;
+    console.log("Form values:")
+    console.log(formValues.metadatos);
+    console.log("Metadatos:")
+    console.log(metadatos);
+    this.documentosService.addMetadata(this.currentDocumentoId, metadatos).subscribe({
+      next: (res) => {
+        documento.metadatos = metadatos;
+        alert('Metadato agregado' + res);
+      },
+      error: (err) => {
+        console.error('Error al agregar metadato', err);
+        alert('Error al agregar metadato' + err.error.error);
+      }
+    });
 
     this.cerrarModal();
   }

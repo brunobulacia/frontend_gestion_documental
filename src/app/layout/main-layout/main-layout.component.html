@@ -20,19 +20,9 @@
             <i class="fas fa-project-diagram"></i> Workflows
           </a>
         </li>
-        <li class="sidebar-item">
-          <a routerLink="/tasks" routerLinkActive="active" class="sidebar-link">
-            <i class="fas fa-tasks"></i> Tareas
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/reports" routerLinkActive="active" class="sidebar-link">
-            <i class="fas fa-chart-bar"></i> Reportes
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/settings" routerLinkActive="active" class="sidebar-link">
-            <i class="fas fa-cog"></i> Configuración
+        <li *ngIf="isAdmin" class="sidebar-item">
+          <a routerLink="/workflows" routerLinkActive="active" class="sidebar-link">
+            <i class="fas fa-project-diagram"></i> Panel de control
           </a>
         </li>
         <li (click)="logout()" class="sidebar-item">

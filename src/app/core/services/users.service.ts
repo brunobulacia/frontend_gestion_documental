@@ -11,6 +11,10 @@ export class UsersService {
   constructor(private http: HttpClient) { }
 
   getUsuarios() {
-    return this.http.get<Usuario[]>(`${this.USERS_URL}`);
+    return this.http.get<Usuario[]>(`${this.USERS_URL}todos/`);
+  }
+
+  getUserRoles() {
+    return this.http.get(`${this.USERS_URL}roles/`);
   }
 }

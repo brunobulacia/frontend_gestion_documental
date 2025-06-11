@@ -202,7 +202,7 @@
   
     <!-- Acciones rápidas -->
     <div class="quick-actions">
-      <div class="quick-action-card">
+      <div (click)="crearDocumento()" class="quick-action-card">
         <div class="quick-action-icon">
           <i class="fas fa-file-upload"></i>
         </div>
@@ -211,7 +211,7 @@
           <p>Sube un nuevo documento al sistema</p>
         </div>
       </div>
-      <div class="quick-action-card">
+      <div (click)="irADocumentos()" class="quick-action-card">
         <div class="quick-action-icon">
           <i class="fas fa-search"></i>
         </div>
@@ -220,7 +220,7 @@
           <p>Busca documentos por título, tipo o área</p>
         </div>
       </div>
-      <div class="quick-action-card">
+      <div (click)="irADocumentos()" class="quick-action-card">
         <div class="quick-action-icon">
           <i class="fas fa-code-branch"></i>
         </div>
@@ -229,7 +229,7 @@
           <p>Administra las versiones de tus documentos</p>
         </div>
       </div>
-      <div class="quick-action-card">
+      <div (click)="irADocumentos()" class="quick-action-card">
         <div class="quick-action-icon">
           <i class="fas fa-user-lock"></i>
         </div>

@@ -15,7 +15,8 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
-
+import { DocumentsService } from '../../../core/services/documents.service';
+import { UsersService } from '../../../core/services/users.service';
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
@@ -51,7 +52,9 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     private router: Router,
     private fb: FormBuilder,
     private workflowService: WorkflowService,
-    private http: HttpClient
+    private http: HttpClient,
+    private documentsService: DocumentsService,
+    private usersService: UsersService
   ) { }
 
   ngOnInit(): void {
@@ -99,23 +102,19 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     // Aquí cargaríamos los datos necesarios para el formulario
     // como tipos de documento, usuarios y roles
     // Por ahora, usamos datos de ejemplo
-    this.tiposDocumento = [
-      { id: 1, nombre: 'Factura' },
-      { id: 2, nombre: 'Contrato' },
-      { id: 3, nombre: 'Orden de compra' }
-    ];
 
-    this.usuarios = [
-      { id: 1, username: 'admin' },
-      { id: 2, username: 'usuario1' },
-      { id: 3, username: 'usuario2' }
-    ];
+    this.documentsService.getDocumentTypes().subscribe((tiposDocumento: any) => {
+      this.tiposDocumento = tiposDocumento;
+    });
+    this.usersService.getUserRoles().subscribe((roles: any) => {
+      this.roles = roles;
+    });
+    this.usersService.getUsuarios().subscribe((usuarios) => {
+      this.usuarios = usuarios;
+      console.log(this.usuarios)
+    });
+    
 
-    this.roles = [
-      { id: 1, nombre: 'Administrador' },
-      { id: 2, nombre: 'Aprobador' },
-      { id: 3, nombre: 'Revisor' }
-    ];
   }
 
   inicializarBpmnModeler(): void {
@@ -639,10 +638,9 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       )
       .subscribe(flujoGuardado => {
         if (flujoGuardado) {
-          console.log('flujoGuardado:')
-          console.log(flujoGuardado);
+          this.guardando = false;
           this.flujoActual = flujoGuardado;
-          this.flujoId = flujoGuardado.flujo.id!;
+          this.flujoId = flujoGuardado.flujo?.id!;
 
           // Redirigimos a la página de edición si estamos creando un nuevo flujo
           if (!this.route.snapshot.paramMap.get('id')) {
