@@ -1,39 +1,45 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterModule, RouterOutlet } from '@angular/router';
+// main-layout.component.ts
+import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 @Component({
   standalone: true,
-  imports: [RouterOutlet, RouterModule, CommonModule],
+  imports: [RouterOutlet, CommonModule],
   selector: 'app-main-layout',
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css']
 })
-export default class MainLayoutComponent implements OnInit {
-  sidebarOpen = true;
+export default class MainLayoutComponent implements OnInit, OnDestroy {
+  sidebarOpen = window.innerWidth > 768;
   isAdmin = false;
-  constructor(
-    private authService: AuthService
-  ) {}
+  username = '';
+  private sub!: Subscription;
+
+  constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    this.checkScreenSize();
-    window.addEventListener('resize', this.checkScreenSize.bind(this));
-    this.authService.actualUser$.subscribe(user => {
-      if (user) {
-        this.isAdmin = user.es_admin;
-        console.log('Usuario actual:', user);
-      }
+    // suscríbete a actualUser$ para poblar isAdmin y username
+    this.sub = this.authService.actualUser$.subscribe(user => {
+      this.isAdmin = !!user?.es_admin;
+      this.username = user?.username ?? '';
     });
-    
+
+    window.addEventListener('resize', this.onResize);
+  }
+
+  ngOnDestroy(): void {
+    this.sub.unsubscribe();
+    window.removeEventListener('resize', this.onResize);
   }
 
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
-  private checkScreenSize(): void {
+  private onResize = () => {
     this.sidebarOpen = window.innerWidth > 768;
   }
 

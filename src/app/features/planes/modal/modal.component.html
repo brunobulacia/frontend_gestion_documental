@@ -1,0 +1,65 @@
+<div class="dialog-container">
+  <h2 mat-dialog-title>
+    <i class="fas" [ngClass]="data.tienePlan ? 'fa-exchange-alt' : 'fa-building'"></i>
+    {{ data.tienePlan ? 'Cambiar Plan' : 'Crear Organización' }}
+  </h2>
+
+  <mat-dialog-content>
+    <div class="dialog-content">
+      <p class="dialog-description">
+        {{ data.tienePlan 
+          ? '¿Estás seguro de que quieres cambiar al plan ' + data.plan.nombre + '?'
+          : 'Para suscribirte, necesitamos crear tu organización primero.' }}
+      </p>
+
+      <!-- Formulario de organización (solo si no tiene plan) -->
+      <form *ngIf="!data.tienePlan" [formGroup]="organizacionForm" class="organization-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nombre de la Organización</mat-label>
+          <input matInput formControlName="nombre" placeholder="Mi Empresa S.A.">
+          <i class="fas fa-building" matSuffix></i>
+          <mat-error>{{ getErrorMessage('nombre') }}</mat-error>
+        </mat-form-field>
+
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Dirección</mat-label>
+          <input matInput formControlName="direccion" placeholder="Dirección de la empresa">
+          <i class="fas fa-map-marker-alt" matSuffix></i>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="telefono" placeholder="+1 234 567 8900">
+          <i class="fas fa-phone" matSuffix></i>
+        </mat-form-field>
+      </form>
+
+      <!-- Resumen del plan seleccionado -->
+      <div class="plan-summary">
+        <h4>Plan Seleccionado:</h4>
+        <div class="plan-info">
+          <div class="plan-details">
+            <span class="plan-name">{{ data.plan.nombre }}</span>
+            <span class="plan-users">Hasta {{ data.plan.maximo_usuarios }} usuarios</span>
+          </div>
+          <div class="plan-price">
+            <span class="price">${{ data.plan.precio }}</span>
+            <span class="period">/mes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">
+      Cancelar
+    </button>
+    <button mat-raised-button color="primary" (click)="onConfirm()"
+            [disabled]="!data.tienePlan && organizacionForm.invalid">
+      <i class="fas fa-check"></i>
+      Confirmar
+    </button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,112 @@
+<div class="subscription-container">
+  <!-- Header -->
+  <div class="header-section">
+    <h1 class="main-title">Planes de Suscripción</h1>
+    <p class="main-subtitle">
+      Elige el plan que mejor se adapte a las necesidades de tu organización
+    </p>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="loading-text">Cargando planes...</p>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Plan Actual -->
+    <mat-card *ngIf="planActual" class="current-plan-card">
+      <mat-card-header>
+        <div mat-card-avatar class="plan-avatar current">
+          <i class="fas" [ngClass]="'fa-' + getPlanIcon(planActual.nombre)"></i>
+        </div>
+        <mat-card-title>Tu Plan Actual</mat-card-title>
+        <mat-card-subtitle>
+          Plan {{ planActual.nombre }} - ${{ planActual.precio }}/mes
+        </mat-card-subtitle>
+        <div class="header-actions">
+          <mat-chip-set>
+            <mat-chip color="primary" selected>
+              <i class="fas fa-star" matChipAvatar></i>
+              Activo
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="current-plan-features">
+          <div class="feature-item">
+            <i class="fas fa-users"></i>
+            <span>Hasta {{ planActual.maximo_usuarios }} usuarios</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-shield-alt"></i>
+            <span>Soporte incluido</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-check-circle"></i>
+            <span>Todas las funcionalidades</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Planes Disponibles -->
+    <div class="plans-grid">
+      <mat-card 
+        *ngFor="let plan of planesDisponibles" 
+        class="plan-card"
+        [class.popular]="plan.popular"
+        [class.current]="planActual?.id === plan.id">
+        
+        <!-- Badge Popular -->
+        <div *ngIf="plan.popular" class="popular-badge">
+          <mat-chip color="primary" selected>Más Popular</mat-chip>
+        </div>
+
+        <mat-card-header class="plan-header">
+          <div mat-card-avatar class="plan-avatar" [class.popular]="plan.popular">
+            <i class="fas" [ngClass]="'fa-' + getPlanIcon(plan.nombre)"></i>
+          </div>
+          <mat-card-title>{{ plan.nombre }}</mat-card-title>
+          <mat-card-subtitle>{{ plan.descripcion }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Precio -->
+          <div class="price-section">
+            <span class="price">${{ plan.precio }}</span>
+            <span class="period">/mes</span>
+          </div>
+
+          <!-- Usuarios -->
+          <div class="users-info">
+            <i class="fas fa-users"></i>
+            <span>Hasta {{ plan.maximo_usuarios }} usuarios</span>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <!-- Características -->
+          <ul class="features-list">
+            <li *ngFor="let caracteristica of plan.caracteristicas" class="feature-item">
+              <i class="fas fa-check check-icon"></i>
+              <span>{{ caracteristica }}</span>
+            </li>
+          </ul>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button 
+            mat-raised-button 
+            [color]="planActual?.id === plan.id ? 'accent' : (plan.popular ? 'primary' : 'basic')"
+            [disabled]="isButtonDisabled(plan)"
+            (click)="handleSuscribirse(plan)"
+            class="subscribe-button">
+            {{ getButtonText(plan) }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+</div>
