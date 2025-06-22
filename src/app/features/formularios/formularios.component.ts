@@ -17,7 +17,7 @@ import {
 @Component({
   selector: 'app-formularios',
   standalone: true,
-  imports: [RouterLink, CommonModule, RouterOutlet, LucideAngularModule],
+  imports: [CommonModule, RouterOutlet, LucideAngularModule],
   templateUrl: './formularios.component.html',
   styleUrl: './formularios.component.css',
 })
