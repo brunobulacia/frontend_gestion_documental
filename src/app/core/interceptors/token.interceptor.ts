@@ -1,20 +1,27 @@
-import { HttpInterceptorFn } from '@angular/common/http';
-import { AuthService } from '../services/auth.service';
 import { inject } from '@angular/core';
+import { HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
 
-export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem('token');
-  const authService: AuthService = inject(AuthService);
-  authService.isAuthenticated;
-  if (!authService.isAuthenticated) {
-    
-    return next(req);
+export function tokenInterceptor(
+  req: HttpRequest<any>,
+  next: HttpHandlerFn
+): Observable<HttpEvent<any>> {
+  const platformId = inject(PLATFORM_ID);
+  let token: string | null = null;
+
+  if (isPlatformBrowser(platformId)) {
+    token = localStorage.getItem('token');
   }
-  const authReq = req.clone({ 
-    setHeaders: { 
-      Authorization: `Bearer ${token}`
-    }
-  });
 
-  return next(authReq);
-};
+  if (token) {
+    req = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  return next(req);
+}
