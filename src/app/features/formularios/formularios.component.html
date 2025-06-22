@@ -1,0 +1,33 @@
+<table border="1">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Descripción</th>
+      <th>Fecha Creación</th>
+      <th>Tipo Documento</th>
+      <th>Creado Por</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let formulario of formularios">
+      <td>{{ formulario.id }}</td>
+      <td>{{ formulario.nombre }}</td>
+      <td>{{ formulario.descripcion }}</td>
+      <td>{{ formulario.fecha_creacion }}</td>
+      <td>{{ formulario.tipo_documento }}</td>
+      <td>{{ formulario.creado_por }}</td>
+      <td>
+        <button
+          (click)="verCamposFormulario(formulario.id!)"
+          class="btn btn-primary"
+          title="Ver Campos"
+        >
+          Ver Campos
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<router-outlet></router-outlet>

@@ -1,0 +1,22 @@
+<a routerLink="/formularios">Volver</a>
+<h1>Estos son los campos del formulario {{ this.formId }}</h1>
+<table border="1">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Tipo</th>
+      <th>Opciones</th>
+      <th>Obligatorio</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let campo of camposFormulario">
+      <td>{{ campo.id }}</td>
+      <td>{{ campo.nombre }}</td>
+      <td>{{ campo.tipo }}</td>
+      <td>{{ campo.opciones }}</td>
+      <td>{{ campo.obligatorio }}</td>
+    </tr>
+  </tbody>
+</table>
