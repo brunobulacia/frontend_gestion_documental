@@ -5,6 +5,7 @@ import { tap } from 'rxjs/operators';
 import { BehaviorSubject } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
+import { resolve } from 'node:dns';
 
 interface AuthResponse {
   access: string;
@@ -57,8 +58,10 @@ export class AuthService {
       .post<AuthResponse>(`${this.USUARIOS_URL}/login/`, { username, password })
       .pipe(
         tap((res) => {
+          console.log(res);
           if (this.isBrowser()) {
             localStorage.setItem('token', res.access);
+            localStorage.setItem('perfil', JSON.stringify(res));
           }
         })
       );
