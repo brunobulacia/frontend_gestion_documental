@@ -1,6 +1,20 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+// workflow-editor.component.ts
+import {
+  Component,
+  OnInit,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+  OnDestroy,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { WorkflowService } from '../../../core/services/workflow.service';
 import {
   FlujoTrabajo,
@@ -8,7 +22,7 @@ import {
   TransicionFlujo,
   TipoElemento,
   FlujoTrabajoCompleto,
-  BpmnElement
+  BpmnElement,
 } from '../../../models/workflows.model';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import { HttpClient } from '@angular/common/http';
@@ -22,9 +36,11 @@ import { UsersService } from '../../../core/services/users.service';
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   selector: 'app-workflow-editor',
   templateUrl: './workflow-editor.component.html',
-  styleUrls: ['./workflow-editor.component.css']
+  styleUrls: ['./workflow-editor.component.css'],
 })
-export default class WorkflowEditorComponent implements OnInit, AfterViewInit, OnDestroy {
+export default class WorkflowEditorComponent
+  implements OnInit, AfterViewInit, OnDestroy
+{
   @ViewChild('bpmnCanvas', { static: false }) bpmnCanvas!: ElementRef;
 
   flujoId: number | null = null;
@@ -55,7 +71,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     private http: HttpClient,
     private documentsService: DocumentsService,
     private usersService: UsersService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.inicializarFormulario();
@@ -66,7 +82,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     this.modoVisualizacion = url.includes('/ver/');
 
     // Obtener el ID del flujo si estamos editando o visualizando
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       const id = params.get('id');
       if (id) {
         this.flujoId = +id;
@@ -75,8 +91,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     });
   }
 
-  ngAfterViewInit(): void {
-  }
+  ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
     if (this.modeler) {
@@ -90,7 +105,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       nombre: ['', [Validators.required, Validators.maxLength(255)]],
       descripcion: [''],
       tipo_documento: [null, Validators.required],
-      activo: [true]
+      activo: [true],
     });
 
     if (this.modoVisualizacion) {
@@ -103,18 +118,18 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     // como tipos de documento, usuarios y roles
     // Por ahora, usamos datos de ejemplo
 
-    this.documentsService.getDocumentTypes().subscribe((tiposDocumento: any) => {
-      this.tiposDocumento = tiposDocumento;
-    });
+    this.documentsService
+      .getDocumentTypes()
+      .subscribe((tiposDocumento: any) => {
+        this.tiposDocumento = tiposDocumento;
+      });
     this.usersService.getUserRoles().subscribe((roles: any) => {
       this.roles = roles;
     });
     this.usersService.getUsuarios().subscribe((usuarios) => {
       this.usuarios = usuarios;
-      console.log(this.usuarios)
+      console.log(this.usuarios);
     });
-    
-
   }
 
   inicializarBpmnModeler(): void {
@@ -127,7 +142,6 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     if (!this.flujoId) {
       this.cargarDiagramaVacio();
     }
-
 
     this.configurarEventosModeler();
   }
@@ -197,13 +211,16 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
   }
 
   manejarSeleccionElemento(element: any): void {
-    if (element.type === 'bpmn:Task' ||
+    if (
+      element.type === 'bpmn:Task' ||
       element.type === 'bpmn:StartEvent' ||
       element.type === 'bpmn:EndEvent' ||
-      element.type === 'bpmn:ExclusiveGateway') {
-
+      element.type === 'bpmn:ExclusiveGateway'
+    ) {
       // Buscar el elemento en nuestro modelo
-      const elementoEncontrado = this.flujoActual?.elementos.find(e => e.bpmnId === element.id);
+      const elementoEncontrado = this.flujoActual?.elementos.find(
+        (e) => e.bpmnId === element.id
+      );
 
       if (elementoEncontrado) {
         this.elementoSeleccionado = elementoEncontrado;
@@ -219,20 +236,26 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
           x: element.x,
           y: element.y,
           width: element.width,
-          height: element.height
+          height: element.height,
         };
       }
     } else if (element.type === 'bpmn:SequenceFlow') {
       // Buscar la transición en nuestro modelo
-      const transicionEncontrada = this.flujoActual?.transiciones.find(t => t.bpmnId === element.id);
+      const transicionEncontrada = this.flujoActual?.transiciones.find(
+        (t) => t.bpmnId === element.id
+      );
 
       if (transicionEncontrada) {
         this.transicionSeleccionada = transicionEncontrada;
         this.elementoSeleccionado = null;
       } else {
         // Si no existe, creamos una nueva transición en nuestro modelo
-        const origenId = this.flujoActual?.elementos.find(e => e.bpmnId === element.source.id)?.id;
-        const destinoId = this.flujoActual?.elementos.find(e => e.bpmnId === element.target.id)?.id;
+        const origenId = this.flujoActual?.elementos.find(
+          (e) => e.bpmnId === element.source.id
+        )?.id;
+        const destinoId = this.flujoActual?.elementos.find(
+          (e) => e.bpmnId === element.target.id
+        )?.id;
 
         if (origenId && destinoId) {
           this.transicionSeleccionada = {
@@ -240,7 +263,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
             destino: destinoId,
             condicion: element.businessObject.name || '',
             bpmnId: element.id,
-            waypoints: element.waypoints
+            waypoints: element.waypoints,
           };
         }
       }
@@ -248,11 +271,12 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
   }
 
   manejarNuevoElemento(element: any): void {
-    if (element.type === 'bpmn:Task' ||
+    if (
+      element.type === 'bpmn:Task' ||
       element.type === 'bpmn:StartEvent' ||
       element.type === 'bpmn:EndEvent' ||
-      element.type === 'bpmn:ExclusiveGateway') {
-
+      element.type === 'bpmn:ExclusiveGateway'
+    ) {
       // Crear un nuevo elemento en nuestro modelo
       const nuevoElemento: ElementoFlujo = {
         flujo: this.flujoId || 0,
@@ -263,14 +287,14 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
         x: element.x,
         y: element.y,
         width: element.width,
-        height: element.height
+        height: element.height,
       };
 
       if (!this.flujoActual) {
         this.flujoActual = {
           flujo: { id: this.flujoId || 0 } as FlujoTrabajo,
           elementos: [],
-          transiciones: []
+          transiciones: [],
         };
       }
 
@@ -282,8 +306,12 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
   manejarNuevaConexion(element: any): void {
     if (element.type === 'bpmn:SequenceFlow') {
       // Buscar los elementos origen y destino en nuestro modelo
-      const origenId = this.flujoActual?.elementos.find(e => e.bpmnId === element.source.id)?.id;
-      const destinoId = this.flujoActual?.elementos.find(e => e.bpmnId === element.target.id)?.id;
+      const origenId = this.flujoActual?.elementos.find(
+        (e) => e.bpmnId === element.source.id
+      )?.id;
+      const destinoId = this.flujoActual?.elementos.find(
+        (e) => e.bpmnId === element.target.id
+      )?.id;
 
       if (origenId && destinoId) {
         // Crear una nueva transición en nuestro modelo
@@ -292,14 +320,14 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
           destino: destinoId,
           condicion: element.businessObject.name || '',
           bpmnId: element.id,
-          waypoints: element.waypoints
+          waypoints: element.waypoints,
         };
 
         if (!this.flujoActual) {
           this.flujoActual = {
             flujo: { id: this.flujoId || 0 } as FlujoTrabajo,
             elementos: [],
-            transiciones: []
+            transiciones: [],
           };
         }
 
@@ -312,14 +340,22 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
   manejarElementoEliminado(element: any): void {
     if (this.flujoActual) {
       // Eliminar el elemento de nuestro modelo
-      this.flujoActual.elementos = this.flujoActual.elementos.filter(e => e.bpmnId !== element.id);
+      this.flujoActual.elementos = this.flujoActual.elementos.filter(
+        (e) => e.bpmnId !== element.id
+      );
 
       // Eliminar las transiciones relacionadas
-      this.flujoActual.transiciones = this.flujoActual.transiciones.filter(t => {
-        const origen = this.flujoActual?.elementos.find(e => e.id === t.origen);
-        const destino = this.flujoActual?.elementos.find(e => e.id === t.destino);
-        return origen && destino;
-      });
+      this.flujoActual.transiciones = this.flujoActual.transiciones.filter(
+        (t) => {
+          const origen = this.flujoActual?.elementos.find(
+            (e) => e.id === t.origen
+          );
+          const destino = this.flujoActual?.elementos.find(
+            (e) => e.id === t.destino
+          );
+          return origen && destino;
+        }
+      );
 
       if (this.elementoSeleccionado?.bpmnId === element.id) {
         this.elementoSeleccionado = null;
@@ -330,7 +366,9 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
   manejarConexionEliminada(element: any): void {
     if (this.flujoActual) {
       // Eliminar la transición de nuestro modelo
-      this.flujoActual.transiciones = this.flujoActual.transiciones.filter(t => t.bpmnId !== element.id);
+      this.flujoActual.transiciones = this.flujoActual.transiciones.filter(
+        (t) => t.bpmnId !== element.id
+      );
 
       if (this.transicionSeleccionada?.bpmnId === element.id) {
         this.transicionSeleccionada = null;
@@ -365,9 +403,10 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
 
     forkJoin([flujoObs, flujoCompletoObs])
       .pipe(
-        catchError(err => {
+        catchError((err) => {
           console.error('Error al cargar el flujo de trabajo', err);
-          this.error = 'Error al cargar el flujo de trabajo. Por favor, intente nuevamente.';
+          this.error =
+            'Error al cargar el flujo de trabajo. Por favor, intente nuevamente.';
           this.cargando = false;
           return of([null, null]);
         })
@@ -378,13 +417,13 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
             nombre: flujo.nombre,
             descripcion: flujo.descripcion,
             tipo_documento: flujo.tipo_documento,
-            activo: flujo.activo
+            activo: flujo.activo,
           });
 
           this.flujoActual = {
             flujo: flujo,
             elementos: flujoCompleto.elementos,
-            transiciones: flujoCompleto.transiciones
+            transiciones: flujoCompleto.transiciones,
           };
 
           // Esperamos al siguiente ciclo del DOM para que #bpmnCanvas exista
@@ -397,7 +436,6 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
         this.cargando = false;
       });
   }
-
 
   cargarDiagramaBpmn(): void {
     if (!this.bpmnCanvas) {
@@ -416,16 +454,18 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     });
   }
 
-
   generarBpmnXml(): string {
     const generarId = () => 'id_' + Math.random().toString(36).substr(2, 9);
 
     if (!this.flujoActual) {
-      throw new Error("No hay flujo actual definido.");
+      throw new Error('No hay flujo actual definido.');
     }
 
     // Si no hay elementos, agregamos un evento de inicio por defecto
-    if (!this.flujoActual.elementos || this.flujoActual.elementos.length === 0) {
+    if (
+      !this.flujoActual.elementos ||
+      this.flujoActual.elementos.length === 0
+    ) {
       const defaultStart: ElementoFlujo = {
         id: 1,
         tipo: TipoElemento.INICIO,
@@ -436,17 +476,17 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
         width: 36,
         height: 36,
         flujo: this.flujoActual.flujo,
-        orden: 1
+        orden: 1,
       };
       this.flujoActual.elementos.push(defaultStart);
     }
 
     // Aseguramos que todos los elementos tengan un bpmnId
-    this.flujoActual.elementos.forEach(e => {
+    this.flujoActual.elementos.forEach((e) => {
       if (!e.bpmnId) e.bpmnId = generarId();
     });
 
-    this.flujoActual.transiciones.forEach(t => {
+    this.flujoActual.transiciones.forEach((t) => {
       if (!t.bpmnId) t.bpmnId = generarId();
     });
 
@@ -459,20 +499,28 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
                       targetNamespace="http://bpmn.io/schema/bpmn">
       <bpmn:process id="Process_1" isExecutable="false">`;
 
-    this.flujoActual.elementos.forEach(elemento => {
+    this.flujoActual.elementos.forEach((elemento) => {
       const tipo = this.mapearTipoElementoBpmn(elemento.tipo);
       xml += `
         <${tipo} id="${elemento.bpmnId}" name="${elemento.nombre || ''}"/>`;
     });
 
-    this.flujoActual.transiciones.forEach(transicion => {
-      const origen = this.flujoActual?.elementos.find(e => e.id === transicion.origen);
-      const destino = this.flujoActual?.elementos.find(e => e.id === transicion.destino);
+    this.flujoActual.transiciones.forEach((transicion) => {
+      const origen = this.flujoActual?.elementos.find(
+        (e) => e.id === transicion.origen
+      );
+      const destino = this.flujoActual?.elementos.find(
+        (e) => e.id === transicion.destino
+      );
 
       if (origen?.bpmnId && destino?.bpmnId) {
         xml += `
-        <bpmn:sequenceFlow id="${transicion.bpmnId}" name="${transicion.condicion || ''}"
-                           sourceRef="${origen.bpmnId}" targetRef="${destino.bpmnId}" />`;
+        <bpmn:sequenceFlow id="${transicion.bpmnId}" name="${
+          transicion.condicion || ''
+        }"
+                           sourceRef="${origen.bpmnId}" targetRef="${
+          destino.bpmnId
+        }" />`;
       }
     });
 
@@ -481,7 +529,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       <bpmndi:BPMNDiagram id="BPMNDiagram_1">
         <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">`;
 
-    this.flujoActual.elementos.forEach(elemento => {
+    this.flujoActual.elementos.forEach((elemento) => {
       const x = elemento.x ?? 100;
       const y = elemento.y ?? 100;
       const width = elemento.width ?? 100;
@@ -493,18 +541,22 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
           </bpmndi:BPMNShape>`;
     });
 
-    this.flujoActual.transiciones.forEach(transicion => {
+    this.flujoActual.transiciones.forEach((transicion) => {
       xml += `
           <bpmndi:BPMNEdge id="Edge_${transicion.bpmnId}" bpmnElement="${transicion.bpmnId}">`;
 
       if (transicion.waypoints?.length) {
-        transicion.waypoints.forEach(pt => {
+        transicion.waypoints.forEach((pt) => {
           xml += `
             <di:waypoint x="${pt.x}" y="${pt.y}" />`;
         });
       } else {
-        const origen = this.flujoActual?.elementos.find(e => e.id === transicion.origen);
-        const destino = this.flujoActual?.elementos.find(e => e.id === transicion.destino);
+        const origen = this.flujoActual?.elementos.find(
+          (e) => e.id === transicion.origen
+        );
+        const destino = this.flujoActual?.elementos.find(
+          (e) => e.id === transicion.destino
+        );
 
         if (origen && destino) {
           const x1 = (origen.x ?? 0) + (origen.width ?? 100) / 2;
@@ -549,10 +601,17 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     if (!this.elementoSeleccionado || !this.flujoActual) return;
 
     // Actualizamos el elemento en nuestro modelo
-    const index = this.flujoActual.elementos.findIndex(e => e.id === this.elementoSeleccionado?.id || e.bpmnId === this.elementoSeleccionado?.bpmnId);
+    const index = this.flujoActual.elementos.findIndex(
+      (e) =>
+        e.id === this.elementoSeleccionado?.id ||
+        e.bpmnId === this.elementoSeleccionado?.bpmnId
+    );
 
     if (index !== -1) {
-      this.flujoActual.elementos[index] = { ...this.elementoSeleccionado, ...evento };
+      this.flujoActual.elementos[index] = {
+        ...this.elementoSeleccionado,
+        ...evento,
+      };
       this.elementoSeleccionado = this.flujoActual.elementos[index];
 
       // Actualizamos el elemento en el diagrama BPMN
@@ -563,7 +622,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
 
       if (bpmnElement) {
         modeling.updateProperties(bpmnElement, {
-          name: this.elementoSeleccionado.nombre
+          name: this.elementoSeleccionado.nombre,
         });
       }
     }
@@ -573,21 +632,30 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
     if (!this.transicionSeleccionada || !this.flujoActual) return;
 
     // Actualizamos la transición en nuestro modelo
-    const index = this.flujoActual.transiciones.findIndex(t => t.id === this.transicionSeleccionada?.id || t.bpmnId === this.transicionSeleccionada?.bpmnId);
+    const index = this.flujoActual.transiciones.findIndex(
+      (t) =>
+        t.id === this.transicionSeleccionada?.id ||
+        t.bpmnId === this.transicionSeleccionada?.bpmnId
+    );
 
     if (index !== -1) {
-      this.flujoActual.transiciones[index] = { ...this.transicionSeleccionada, ...evento };
+      this.flujoActual.transiciones[index] = {
+        ...this.transicionSeleccionada,
+        ...evento,
+      };
       this.transicionSeleccionada = this.flujoActual.transiciones[index];
 
       // Actualizamos la transición en el diagrama BPMN
       const elementRegistry = this.modeler.get('elementRegistry');
       const modeling = this.modeler.get('modeling');
 
-      const bpmnElement = elementRegistry.get(this.transicionSeleccionada.bpmnId);
+      const bpmnElement = elementRegistry.get(
+        this.transicionSeleccionada.bpmnId
+      );
 
       if (bpmnElement) {
         modeling.updateProperties(bpmnElement, {
-          name: this.transicionSeleccionada.condicion
+          name: this.transicionSeleccionada.condicion,
         });
       }
     }
@@ -611,7 +679,7 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       nombre: datosFormulario.nombre,
       descripcion: datosFormulario.descripcion,
       tipo_documento: datosFormulario.tipo_documento,
-      activo: datosFormulario.activo
+      activo: datosFormulario.activo,
     };
 
     // Actualizamos el flujo en nuestro modelo
@@ -621,22 +689,24 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       this.flujoActual = {
         flujo: flujo,
         elementos: [],
-        transiciones: []
+        transiciones: [],
       };
     }
 
-    console.log('guardar:')
+    console.log('guardar:');
     console.log(this.flujoActual);
-    this.workflowService.guardarFlujoCompleto(this.flujoActual)
+    this.workflowService
+      .guardarFlujoCompleto(this.flujoActual)
       .pipe(
-        catchError(err => {
+        catchError((err) => {
           console.error('Error al guardar el flujo de trabajo', err);
-          this.error = 'Error al guardar el flujo de trabajo. Por favor, intente nuevamente.';
+          this.error =
+            'Error al guardar el flujo de trabajo. Por favor, intente nuevamente.';
           this.guardando = false;
           return of(null);
         })
       )
-      .subscribe(flujoGuardado => {
+      .subscribe((flujoGuardado) => {
         if (flujoGuardado) {
           this.guardando = false;
           this.flujoActual = flujoGuardado;
@@ -658,18 +728,19 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       return;
     }
 
-    this.workflowService.validarFlujo(this.flujoId)
-      .subscribe(resultado => {
-        if (resultado.valido) {
-          alert('El flujo de trabajo es válido.');
-        } else {
-          alert(`El flujo de trabajo no es válido:\n${resultado.errores.join('\n')}`);
-        }
-      });
+    this.workflowService.validarFlujo(this.flujoId).subscribe((resultado) => {
+      if (resultado.valido) {
+        alert('El flujo de trabajo es válido.');
+      } else {
+        alert(
+          `El flujo de trabajo no es válido:\n${resultado.errores.join('\n')}`
+        );
+      }
+    });
   }
 
   marcarCamposInvalidos(): void {
-    Object.keys(this.flujoForm.controls).forEach(key => {
+    Object.keys(this.flujoForm.controls).forEach((key) => {
       const control = this.flujoForm.get(key);
       if (control?.invalid) {
         control.markAsTouched();
@@ -682,16 +753,13 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
   }
 
   openDiagram(bpmnXML: any) {
-
     // import diagram
     try {
-
       this.modeler.importXML(bpmnXML);
 
       // access modeler components
       var canvas = this.modeler.get('canvas');
       var overlays = this.modeler.get('overlays');
-
 
       // zoom to fit full viewport
       canvas.zoom('fit-viewport');
@@ -700,17 +768,15 @@ export default class WorkflowEditorComponent implements OnInit, AfterViewInit, O
       overlays.add('SCAN_OK', 'note', {
         position: {
           bottom: 0,
-          right: 0
+          right: 0,
         },
-        html: '<div class="diagram-note">Mixed up the labels?</div>'
+        html: '<div class="diagram-note">Mixed up the labels?</div>',
       });
 
       // add marker
       canvas.addMarker('SCAN_OK', 'needs-discussion');
     } catch (err) {
-
       console.error('could not import BPMN 2.0 diagram', err);
     }
   }
-
 }

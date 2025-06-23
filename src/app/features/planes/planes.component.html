@@ -53,19 +53,22 @@
 
     <!-- Planes Disponibles -->
     <div class="plans-grid">
-      <mat-card 
-        *ngFor="let plan of planesDisponibles" 
+      <mat-card
+        *ngFor="let plan of planesDisponibles"
         class="plan-card"
         [class.popular]="plan.popular"
-        [class.current]="planActual?.id === plan.id">
-        
-        <!-- Badge Popular -->
-        <div *ngIf="plan.popular" class="popular-badge">
+        [class.current]="planActual?.id === plan.id"
+      >
+        <!-- <div *ngIf="plan.popular" class="popular-badge">
           <mat-chip color="primary" selected>Más Popular</mat-chip>
-        </div>
+        </div> -->
 
         <mat-card-header class="plan-header">
-          <div mat-card-avatar class="plan-avatar" [class.popular]="plan.popular">
+          <div
+            mat-card-avatar
+            class="plan-avatar"
+            [class.popular]="plan.popular"
+          >
             <i class="fas" [ngClass]="'fa-' + getPlanIcon(plan.nombre)"></i>
           </div>
           <mat-card-title>{{ plan.nombre }}</mat-card-title>
@@ -89,7 +92,10 @@
 
           <!-- Características -->
           <ul class="features-list">
-            <li *ngFor="let caracteristica of plan.caracteristicas" class="feature-item">
+            <li
+              *ngFor="let caracteristica of plan.caracteristicas"
+              class="feature-item"
+            >
               <i class="fas fa-check check-icon"></i>
               <span>{{ caracteristica }}</span>
             </li>
@@ -97,12 +103,19 @@
         </mat-card-content>
 
         <mat-card-actions>
-          <button 
-            mat-raised-button 
-            [color]="planActual?.id === plan.id ? 'accent' : (plan.popular ? 'primary' : 'basic')"
+          <button
+            mat-raised-button
+            [color]="
+              planActual?.id === plan.id
+                ? 'accent'
+                : plan.popular
+                ? 'primary'
+                : 'basic'
+            "
             [disabled]="isButtonDisabled(plan)"
             (click)="handleSuscribirse(plan)"
-            class="subscribe-button">
+            class="subscribe-button"
+          >
             {{ getButtonText(plan) }}
           </button>
         </mat-card-actions>

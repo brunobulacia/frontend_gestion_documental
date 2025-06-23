@@ -1,86 +1,186 @@
 <div class="app-container">
+  <!-- Overlay para móvil -->
+  <div
+    class="sidebar-overlay"
+    [class.active]="sidebarOpen && isMobile"
+    (click)="closeSidebar()"
+  ></div>
+
   <!-- Sidebar -->
   <aside class="sidebar" [class.open]="sidebarOpen">
     <div class="sidebar-header">
-      <h2>GestDoc</h2>
+      <h2>
+        <i-lucide
+          [img]="FileTextIcon"
+          class="lucide-icon-lg text-secondary"
+        ></i-lucide>
+        Sistema de Gestión Documental
+      </h2>
     </div>
-    <ul class="sidebar-menu">
-      <li class="sidebar-item">
-        <a
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
-          <i class="fas fa-tachometer-alt"></i> Dashboard
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a
-          routerLink="/documents"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
-          <i class="fas fa-file-alt"></i> Documentos
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a
-          routerLink="/workflows"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
-          <i class="fas fa-project-diagram"></i> Workflows
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a routerLink="" routerLinkActive="active" class="sidebar-link">
-          <i class="fas fa-project-diagram"></i> Panel de control
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a routerLink="/planes" routerLinkActive="active" class="sidebar-link">
-          <i class="fas fa-project-diagram"></i> Planes
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a
-          routerLink="/formularios"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
-          <i class="fas fa-project-diagram"></i> Formularios
-        </a>
-      </li>
-      <li (click)="logout()" class="sidebar-item">
-        <a class="sidebar-link"> <i class="fas fa-cog"></i> Cerrar Sesión </a>
-      </li>
-    </ul>
+
+    <nav class="sidebar-menu" role="navigation" aria-label="Menú principal">
+      <ul style="list-style: none; margin: 0; padding: 0">
+        <li class="sidebar-item">
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="active"
+            class="sidebar-link"
+            [attr.aria-current]="isActiveRoute('/dashboard') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="LayoutDashboardIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Dashboard</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
+            routerLink="/documents"
+            routerLinkActive="active"
+            class="sidebar-link"
+            [attr.aria-current]="isActiveRoute('/documents') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="FileIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Documentos</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
+            routerLink="/workflows"
+            routerLinkActive="active"
+            class="sidebar-link"
+            [attr.aria-current]="isActiveRoute('/workflows') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="WorkflowIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Workflows</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
+            routerLink="/control-panel"
+            routerLinkActive="active"
+            class="sidebar-link"
+            [attr.aria-current]="
+              isActiveRoute('/control-panel') ? 'page' : null
+            "
+          >
+            <i-lucide
+              [img]="SettingsIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Panel de Control</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
+            routerLink="/planes"
+            routerLinkActive="active"
+            class="sidebar-link"
+            [attr.aria-current]="isActiveRoute('/planes') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="CreditCardIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Planes</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
+            routerLink="/formularios"
+            routerLinkActive="active"
+            class="sidebar-link"
+            [attr.aria-current]="isActiveRoute('/formularios') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="ClipboardListIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Formularios</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item logout-item">
+          <a
+            class="sidebar-link logout-link"
+            (click)="logout()"
+            (keydown.enter)="logout()"
+            (keydown.space)="logout()"
+            tabindex="0"
+            role="button"
+            aria-label="Cerrar sesión"
+          >
+            <i-lucide
+              [img]="LogOutIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Cerrar Sesión</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
   </aside>
 
   <!-- Main Content -->
-  <div class="main-content" [class.with-sidebar]="sidebarOpen">
+  <div class="main-content" [class.sidebar-collapsed]="!sidebarOpen">
     <!-- Header -->
-    <header class="header">
-      <div class="navbar">
+    <header class="header" role="banner">
+      <nav class="navbar" role="navigation" aria-label="Navegación principal">
         <div class="navbar-left">
-          <button class="btn-icon" (click)="toggleSidebar()">
-            <i class="fas fa-bars"></i>
+          <button
+            class="sidebar-toggle btn-ghost btn-icon"
+            (click)="toggleSidebar()"
+            [attr.aria-label]="sidebarOpen ? 'Cerrar menú' : 'Abrir menú'"
+            [attr.aria-expanded]="sidebarOpen"
+          >
+            <i-lucide [img]="MenuIcon" class="lucide-icon"></i-lucide>
           </button>
-          <span class="navbar-brand">Sistema de Gestión Documental</span>
+
+          <div class="navbar-brand">
+            <i-lucide
+              [img]="BuildingIcon"
+              class="lucide-icon text-secondary"
+            ></i-lucide>
+            <span>Sistema de Gestión Documental</span>
+          </div>
         </div>
+
         <div class="navbar-right">
-          <div class="user-menu">
-            <span class="user-name">Usuario</span>
+          <!-- Menú de usuario -->
+          <div
+            class="user-menu"
+            role="button"
+            tabindex="0"
+            aria-label="Menú de usuario"
+          >
+            <div class="user-info">
+              <span class="user-name">{{ username || "Usuario" }}</span>
+              <span class="user-role">{{
+                isAdmin ? "Administrador" : "Usuario"
+              }}</span>
+            </div>
             <div class="avatar">
-              <i class="fas fa-user"></i>
+              <i-lucide [img]="UserIcon" class="lucide-icon-sm"></i-lucide>
             </div>
           </div>
         </div>
-      </div>
+      </nav>
     </header>
 
     <!-- Page Content -->
-    <main class="content">
+    <main class="content" role="main">
       <router-outlet></router-outlet>
     </main>
   </div>

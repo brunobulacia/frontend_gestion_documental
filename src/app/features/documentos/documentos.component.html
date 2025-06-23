@@ -1,178 +1,349 @@
-<div *ngIf="cargando">Cargando...</div>
 <div class="documents-container">
-  <!-- Encabezado y acciones -->
-  <div class="documents-header">
-    <div class="header-title">
-      <h1>Documentos</h1>
-      <p class="text-muted">Gestiona tus documentos y archivos</p>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" (click)="abrirModalCrear()">
-        <i class="fas fa-plus"></i> Nuevo Documento
-      </button>
-    </div>
+  <!-- Loading State -->
+  <div *ngIf="cargando" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Cargando documentos...</p>
   </div>
 
-  <!-- Filtros y búsqueda -->
-  <div class="filters-container">
-    <div class="search-box">
-      <input
-        type="text"
-        class="form-control"
-        placeholder="Buscar documentos..."
-        [(ngModel)]="searchTerm"
-        (input)="aplicarFiltros()"
-      />
-      <i class="fas fa-search search-icon"></i>
-    </div>
-    <div class="filters">
-      <div class="filter-group">
-        <label for="tipo-filter">Tipo:</label>
-        <select
-          id="tipo-filter"
-          class="form-control"
-          [(ngModel)]="tipoFilter"
-          (change)="aplicarFiltros()"
-        >
-          <option value="all">Todos</option>
-          <option *ngFor="let tipo of tiposDocumento" [value]="tipo.id">
-            {{ tipo.nombre }}
-          </option>
-        </select>
+  <!-- Main Content -->
+  <div *ngIf="!cargando">
+    <!-- Header -->
+    <div class="documents-header">
+      <div class="header-title">
+        <h1>Documentos</h1>
+        <p class="header-subtitle">Gestiona tus documentos y archivos</p>
       </div>
-      <div class="filter-group">
-        <label for="area-filter">Área:</label>
-        <select
-          id="area-filter"
-          class="form-control"
-          [(ngModel)]="areaFilter"
-          (change)="aplicarFiltros()"
+      <div class="header-actions">
+        <button
+          class="btn btn-secondary"
+          (click)="refreshData()"
+          [disabled]="isRefreshing"
         >
-          <option value="all">Todas</option>
-          <option *ngFor="let area of areas" [value]="area.id">
-            {{ area.nombre }}
-          </option>
-        </select>
+          <i-lucide
+            [img]="RefreshCwIcon"
+            class="lucide-icon"
+            [class.animate-spin]="isRefreshing"
+          ></i-lucide>
+          Actualizar
+        </button>
+        <button class="btn btn-primary" (click)="abrirModalCrear()">
+          <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+          Nuevo Documento
+        </button>
       </div>
     </div>
-  </div>
 
-  <!-- Tabla de documentos -->
-  <div class="documents-table-container">
-    <table class="documents-table">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Tipo</th>
-          <th>Área</th>
-          <th>Última versión</th>
-          <th>Fecha modificación</th>
-          <th>Creado por</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let documento of documentosFiltrados">
-          <td>{{ documento.titulo }}</td>
-          <td>{{ documento.tipo?.nombre ?? "Sin tipo" }}</td>
-          <td>{{ documento.area?.nombre ?? "Sin área" }}</td>
-          <td>
-            <span *ngIf="obtenerUltimaVersion(documento)">
-              v{{ obtenerUltimaVersion(documento)?.version }}
-            </span>
-            <span *ngIf="!obtenerUltimaVersion(documento)" class="text-muted">
-              Sin versiones
-            </span>
-          </td>
-          <td>
-            {{ documento.fecha_modificacion | date : "dd/MM/yyyy HH:mm" }}
-          </td>
-          <td>{{ documento.creado_por.username }}</td>
-          <td>
-            <div class="actions-container">
-              <button
-                class="btn-icon"
-                title="Ver detalles"
-                (click)="verDetallesDocumento(documento)"
-                *ngIf="tienePermiso(documento, 'ver')"
+    <!-- Filtros y búsqueda -->
+    <div class="filters-container">
+      <div class="search-box">
+        <i-lucide [img]="SearchIcon" class="search-icon lucide-icon"></i-lucide>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar documentos por título, descripción o metadatos..."
+          [(ngModel)]="searchTerm"
+          (input)="aplicarFiltros()"
+          [attr.aria-label]="'Buscar documentos'"
+        />
+      </div>
+      <div class="filters">
+        <div class="filter-group">
+          <label for="tipo-filter">
+            <i-lucide [img]="FileTextIcon" class="lucide-icon-sm"></i-lucide>
+            Tipo de documento
+          </label>
+          <select
+            id="tipo-filter"
+            class="form-control"
+            [(ngModel)]="tipoFilter"
+            (change)="aplicarFiltros()"
+            [attr.aria-label]="'Filtrar por tipo de documento'"
+          >
+            <option value="all">Todos los tipos</option>
+            <option
+              *ngFor="let tipo of tiposDocumento; trackBy: trackByTipoId"
+              [value]="tipo.id"
+            >
+              {{ tipo.nombre }}
+            </option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="area-filter">
+            <i-lucide [img]="BuildingIcon" class="lucide-icon-sm"></i-lucide>
+            Área
+          </label>
+          <select
+            id="area-filter"
+            class="form-control"
+            [(ngModel)]="areaFilter"
+            (change)="aplicarFiltros()"
+            [attr.aria-label]="'Filtrar por área'"
+          >
+            <option value="all">Todas las áreas</option>
+            <option
+              *ngFor="let area of areas; trackBy: trackByAreaId"
+              [value]="area.id"
+            >
+              {{ area.nombre }}
+            </option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="estado-filter">
+            <i-lucide [img]="FilterIcon" class="lucide-icon-sm"></i-lucide>
+            Estado
+          </label>
+          <select
+            id="estado-filter"
+            class="form-control"
+            [(ngModel)]="estadoFilter"
+            (change)="aplicarFiltros()"
+            [attr.aria-label]="'Filtrar por estado'"
+          >
+            <option value="all">Todos</option>
+            <option value="publico">Públicos</option>
+            <option value="privado">Privados</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de documentos -->
+    <div class="documents-table-container">
+      <table
+        class="documents-table"
+        role="table"
+        aria-label="Lista de documentos"
+      >
+        <thead>
+          <tr>
+            <th scope="col">
+              <i-lucide [img]="FileTextIcon" class="lucide-icon-sm"></i-lucide>
+              Título
+            </th>
+            <th scope="col">
+              <i-lucide [img]="TagIcon" class="lucide-icon-sm"></i-lucide>
+              Tipo
+            </th>
+            <th scope="col">
+              <i-lucide [img]="BuildingIcon" class="lucide-icon-sm"></i-lucide>
+              Área
+            </th>
+            <th scope="col">
+              <i-lucide [img]="GitBranchIcon" class="lucide-icon-sm"></i-lucide>
+              Versión
+            </th>
+            <th scope="col">
+              <i-lucide [img]="CalendarIcon" class="lucide-icon-sm"></i-lucide>
+              Modificado
+            </th>
+            <th scope="col">
+              <i-lucide [img]="UserIcon" class="lucide-icon-sm"></i-lucide>
+              Autor
+            </th>
+            <th scope="col">
+              <i-lucide [img]="SettingsIcon" class="lucide-icon-sm"></i-lucide>
+              Acciones
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="
+              let documento of documentosFiltrados;
+              trackBy: trackByDocumentId
+            "
+            [attr.aria-label]="'Documento: ' + documento.titulo"
+          >
+            <td>
+              <div class="document-title" [title]="documento.titulo">
+                {{ documento.titulo }}
+              </div>
+              <div *ngIf="documento.descripcion" class="document-description">
+                {{ documento.descripcion | slice : 0 : 50
+                }}{{ documento.descripcion.length > 50 ? "..." : "" }}
+              </div>
+            </td>
+            <td>
+              <span class="document-type" *ngIf="documento.tipo">
+                {{ documento.tipo.nombre }}
+              </span>
+              <span *ngIf="!documento.tipo" class="text-muted">Sin tipo</span>
+            </td>
+            <td>
+              <span class="document-area" *ngIf="documento.area">
+                {{ documento.area.nombre }}
+              </span>
+              <span *ngIf="!documento.area" class="text-muted">Sin área</span>
+            </td>
+            <td>
+              <span
+                class="version-badge"
+                *ngIf="obtenerUltimaVersion(documento)"
               >
-                <i class="fas fa-eye"></i>
+                v{{ obtenerUltimaVersion(documento)?.version }}
+              </span>
+              <span *ngIf="!obtenerUltimaVersion(documento)" class="text-muted">
+                Sin versiones
+              </span>
+            </td>
+            <td>
+              <div class="document-date">
+                <i-lucide [img]="ClockIcon" class="lucide-icon-sm"></i-lucide>
+                {{ documento.fecha_modificacion | date : "dd/MM/yyyy" }}
+              </div>
+              <div class="document-date">
+                {{ documento.fecha_modificacion | date : "HH:mm" }}
+              </div>
+            </td>
+            <td>
+              <div class="document-author">
+                <i-lucide [img]="UserIcon" class="lucide-icon-sm"></i-lucide>
+                {{ documento.creado_por.username }}
+              </div>
+            </td>
+            <td>
+              <div class="actions-container">
+                <button
+                  class="btn-icon"
+                  title="Ver detalles del documento"
+                  (click)="verDetallesDocumento(documento)"
+                  *ngIf="tienePermiso(documento, 'ver')"
+                  [attr.aria-label]="'Ver detalles de ' + documento.titulo"
+                >
+                  <i-lucide [img]="EyeIcon" class="lucide-icon-sm"></i-lucide>
+                </button>
+                <button
+                  class="btn-icon"
+                  title="Editar documento"
+                  (click)="abrirModalEditar(documento)"
+                  *ngIf="tienePermiso(documento, 'editar')"
+                  [attr.aria-label]="'Editar ' + documento.titulo"
+                >
+                  <i-lucide [img]="EditIcon" class="lucide-icon-sm"></i-lucide>
+                </button>
+                <button
+                  class="btn-icon"
+                  title="Gestionar versiones"
+                  (click)="abrirModalVersiones(documento)"
+                  *ngIf="tienePermiso(documento, 'editar')"
+                  [attr.aria-label]="
+                    'Gestionar versiones de ' + documento.titulo
+                  "
+                >
+                  <i-lucide
+                    [img]="GitBranchIcon"
+                    class="lucide-icon-sm"
+                  ></i-lucide>
+                </button>
+                <button
+                  class="btn-icon"
+                  title="Gestionar permisos"
+                  (click)="abrirModalPermisos(documento)"
+                  *ngIf="tienePermiso(documento, 'editar')"
+                  [attr.aria-label]="
+                    'Gestionar permisos de ' + documento.titulo
+                  "
+                >
+                  <i-lucide
+                    [img]="ShieldIcon"
+                    class="lucide-icon-sm"
+                  ></i-lucide>
+                </button>
+                <button
+                  class="btn-icon"
+                  title="Gestionar metadatos"
+                  (click)="abrirModalMetadatos(documento)"
+                  *ngIf="tienePermiso(documento, 'editar')"
+                  [attr.aria-label]="
+                    'Gestionar metadatos de ' + documento.titulo
+                  "
+                >
+                  <i-lucide [img]="TagsIcon" class="lucide-icon-sm"></i-lucide>
+                </button>
+                <button
+                  class="btn-icon btn-danger"
+                  title="Eliminar documento"
+                  (click)="eliminarDocumento(documento.id)"
+                  *ngIf="tienePermiso(documento, 'eliminar')"
+                  [attr.aria-label]="'Eliminar ' + documento.titulo"
+                >
+                  <i-lucide [img]="TrashIcon" class="lucide-icon-sm"></i-lucide>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="documentosFiltrados.length === 0">
+            <td colspan="7" class="no-results">
+              <div class="empty-state-icon">
+                <i-lucide [img]="SearchIcon" class="lucide-icon-xl"></i-lucide>
+              </div>
+              <p>
+                No se encontraron documentos que coincidan con los criterios de
+                búsqueda.
+              </p>
+              <button class="btn btn-outline btn-sm" (click)="limpiarFiltros()">
+                <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
+                Limpiar filtros
               </button>
-              <button
-                class="btn-icon"
-                title="Editar documento"
-                (click)="abrirModalEditar(documento)"
-                *ngIf="tienePermiso(documento, 'editar')"
-              >
-                <i class="fas fa-edit"></i>
-              </button>
-              <button
-                class="btn-icon"
-                title="Gestionar versiones"
-                (click)="abrirModalVersiones(documento)"
-                *ngIf="tienePermiso(documento, 'editar')"
-              >
-                <i class="fas fa-code-branch"></i>
-              </button>
-              <button
-                class="btn-icon"
-                title="Gestionar permisos"
-                (click)="abrirModalPermisos(documento)"
-                *ngIf="tienePermiso(documento, 'editar')"
-              >
-                <i class="fas fa-user-lock"></i>
-              </button>
-              <button
-                class="btn-icon"
-                title="Gestionar metadatos"
-                (click)="abrirModalMetadatos(documento)"
-                *ngIf="tienePermiso(documento, 'editar')"
-              >
-                <i class="fas fa-tags"></i>
-              </button>
-              <button
-                class="btn-icon btn-danger"
-                title="Eliminar documento"
-                (click)="eliminarDocumento(documento.id)"
-                *ngIf="tienePermiso(documento, 'eliminar')"
-              >
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-        <tr *ngIf="documentosFiltrados.length === 0">
-          <td colspan="7" class="no-results">
-            No se encontraron documentos que coincidan con los criterios de
-            búsqueda.
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación (si es necesaria) -->
+    <div class="pagination-container" *ngIf="totalPages > 1">
+      <!-- Implementar paginación aquí -->
+    </div>
   </div>
 
   <!-- Modal para crear/editar documento -->
-  <div class="modal" *ngIf="isModalOpen">
+  <div
+    class="modal"
+    *ngIf="isModalOpen"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="isEditing ? 'Editar documento' : 'Crear nuevo documento'"
+  >
     <div class="modal-backdrop" (click)="cerrarModal()"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3>{{ isEditing ? "Editar documento" : "Nuevo documento" }}</h3>
-        <button class="btn-close" (click)="cerrarModal()">
-          <i class="fas fa-times"></i>
+        <h3>
+          <i-lucide
+            [img]="isEditing ? EditIcon : PlusIcon"
+            class="modal-header-icon lucide-icon"
+          ></i-lucide>
+          {{ isEditing ? "Editar documento" : "Nuevo documento" }}
+        </h3>
+        <button
+          class="btn-close"
+          (click)="cerrarModal()"
+          [attr.aria-label]="'Cerrar modal'"
+        >
+          <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
         </button>
       </div>
       <div class="modal-body">
         <form [formGroup]="documentoForm" (ngSubmit)="guardarDocumento()">
           <div class="form-group">
-            <label for="titulo" class="form-label">Título</label>
+            <label for="titulo" class="form-label">
+              <i-lucide [img]="FileTextIcon" class="lucide-icon-sm"></i-lucide>
+              Título *
+            </label>
             <input
               type="text"
               id="titulo"
               formControlName="titulo"
               class="form-control"
+              placeholder="Ingrese el título del documento"
               [class.is-invalid]="
                 documentoForm.get('titulo')?.invalid &&
                 documentoForm.get('titulo')?.touched
+              "
+              [attr.aria-describedby]="
+                documentoForm.get('titulo')?.invalid ? 'titulo-error' : null
               "
             />
             <div
@@ -181,33 +352,70 @@
                 documentoForm.get('titulo')?.touched
               "
               class="form-error"
+              id="titulo-error"
             >
+              <i-lucide
+                [img]="AlertCircleIcon"
+                class="lucide-icon-sm"
+              ></i-lucide>
               El título es obligatorio.
             </div>
           </div>
 
           <div class="form-group">
-            <label for="descripcion" class="form-label">Descripción</label>
+            <label for="descripcion" class="form-label">
+              <i-lucide [img]="AlignLeftIcon" class="lucide-icon-sm"></i-lucide>
+              Descripción
+            </label>
             <textarea
               id="descripcion"
               formControlName="descripcion"
               class="form-control"
-              rows="3"
+              rows="4"
+              placeholder="Describe brevemente el contenido del documento"
             ></textarea>
           </div>
-          <div class="form-group">
-            <label for="archivo" class="form-label">Archivo</label>
-            <input
-              type="file"
-              id="archivo"
-              (change)="onFileSelected($event)"
-              required
-              accept=".pdf,.docx,.xlsx"
-            />
+
+          <div class="form-group" *ngIf="!isEditing">
+            <label for="archivo" class="form-label">
+              <i-lucide [img]="UploadIcon" class="lucide-icon-sm"></i-lucide>
+              Archivo *
+            </label>
+            <div class="file-upload">
+              <input
+                type="file"
+                id="archivo"
+                class="file-input"
+                (change)="onFileSelected($event)"
+                accept=".pdf,.docx,.xlsx,.pptx,.txt"
+                [attr.aria-describedby]="'archivo-hint'"
+              />
+              <label for="archivo" class="file-label">
+                <div class="file-label-content">
+                  <i-lucide
+                    [img]="UploadCloudIcon"
+                    class="file-label-icon"
+                  ></i-lucide>
+                  <div class="file-label-text">
+                    {{
+                      archivoSeleccionado
+                        ? archivoSeleccionado.name
+                        : "Seleccionar archivo"
+                    }}
+                  </div>
+                  <div class="file-label-hint" id="archivo-hint">
+                    Formatos: PDF, DOCX, XLSX, PPTX, TXT (máx. 10MB)
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div class="form-group">
-            <label for="tipo_id" class="form-label">Tipo de documento</label>
+            <label for="tipo_id" class="form-label">
+              <i-lucide [img]="TagIcon" class="lucide-icon-sm"></i-lucide>
+              Tipo de documento *
+            </label>
             <select
               id="tipo_id"
               formControlName="tipo_id"
@@ -216,9 +424,15 @@
                 documentoForm.get('tipo_id')?.invalid &&
                 documentoForm.get('tipo_id')?.touched
               "
+              [attr.aria-describedby]="
+                documentoForm.get('tipo_id')?.invalid ? 'tipo-error' : null
+              "
             >
-              <option value="">Seleccionar tipo</option>
-              <option *ngFor="let tipo of tiposDocumento" [value]="tipo.id">
+              <option value="">Seleccionar tipo de documento</option>
+              <option
+                *ngFor="let tipo of tiposDocumento; trackBy: trackByTipoId"
+                [value]="tipo.id"
+              >
                 {{ tipo.nombre }}
               </option>
             </select>
@@ -228,13 +442,21 @@
                 documentoForm.get('tipo_id')?.touched
               "
               class="form-error"
+              id="tipo-error"
             >
+              <i-lucide
+                [img]="AlertCircleIcon"
+                class="lucide-icon-sm"
+              ></i-lucide>
               El tipo de documento es obligatorio.
             </div>
           </div>
 
           <div class="form-group">
-            <label for="area_id" class="form-label">Área</label>
+            <label for="area_id" class="form-label">
+              <i-lucide [img]="BuildingIcon" class="lucide-icon-sm"></i-lucide>
+              Área *
+            </label>
             <select
               id="area_id"
               formControlName="area_id"
@@ -243,9 +465,15 @@
                 documentoForm.get('area_id')?.invalid &&
                 documentoForm.get('area_id')?.touched
               "
+              [attr.aria-describedby]="
+                documentoForm.get('area_id')?.invalid ? 'area-error' : null
+              "
             >
               <option value="">Seleccionar área</option>
-              <option *ngFor="let area of areas" [value]="area.id">
+              <option
+                *ngFor="let area of areas; trackBy: trackByAreaId"
+                [value]="area.id"
+              >
                 {{ area.nombre }}
               </option>
             </select>
@@ -255,7 +483,12 @@
                 documentoForm.get('area_id')?.touched
               "
               class="form-error"
+              id="area-error"
             >
+              <i-lucide
+                [img]="AlertCircleIcon"
+                class="lucide-icon-sm"
+              ></i-lucide>
               El área es obligatoria.
             </div>
           </div>
@@ -266,32 +499,46 @@
                 type="checkbox"
                 id="es_publico"
                 formControlName="es_publico"
+                [attr.aria-describedby]="'publico-hint'"
               />
-              <label for="es_publico" class="checkbox-label"
-                >Documento público</label
-              >
+              <label for="es_publico" class="checkbox-label">
+                <i-lucide [img]="GlobeIcon" class="lucide-icon-sm"></i-lucide>
+                Documento público
+              </label>
             </div>
-            <small class="text-muted"
-              >Los documentos públicos pueden ser vistos por todos los
-              usuarios.</small
-            >
+            <small class="text-muted" id="publico-hint">
+              Los documentos públicos pueden ser vistos por todos los usuarios
+              del sistema.
+            </small>
           </div>
 
           <div class="form-section">
-            <h4>Metadatos personalizados</h4>
+            <h4>
+              <i-lucide
+                [img]="TagsIcon"
+                class="form-section-icon lucide-icon"
+              ></i-lucide>
+              Metadatos personalizados
+            </h4>
             <div formArrayName="metadatos">
               <div
-                *ngFor="let metadato of metadatosArray.controls; let i = index"
+                *ngFor="
+                  let metadato of metadatosArray.controls;
+                  let i = index;
+                  trackBy: trackByMetadatoIndex
+                "
                 [formGroupName]="i"
                 class="metadato-row"
               >
                 <div class="metadato-fields">
                   <div class="form-group">
+                    <label [for]="'clave-' + i" class="form-label">Clave</label>
                     <input
                       type="text"
+                      [id]="'clave-' + i"
                       formControlName="clave"
                       class="form-control"
-                      placeholder="Clave"
+                      placeholder="Ej: Cliente, Proyecto, etc."
                       [class.is-invalid]="
                         metadato.get('clave')?.invalid &&
                         metadato.get('clave')?.touched
@@ -299,11 +546,13 @@
                     />
                   </div>
                   <div class="form-group">
+                    <label [for]="'valor-' + i" class="form-label">Valor</label>
                     <input
                       type="text"
+                      [id]="'valor-' + i"
                       formControlName="valor"
                       class="form-control"
-                      placeholder="Valor"
+                      placeholder="Valor del metadato"
                       [class.is-invalid]="
                         metadato.get('valor')?.invalid &&
                         metadato.get('valor')?.touched
@@ -314,8 +563,9 @@
                     type="button"
                     class="btn-icon btn-danger"
                     (click)="eliminarMetadato(i)"
+                    [attr.aria-label]="'Eliminar metadato ' + (i + 1)"
                   >
-                    <i class="fas fa-times"></i>
+                    <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
                   </button>
                 </div>
               </div>
@@ -324,7 +574,8 @@
                 class="btn btn-outline btn-sm"
                 (click)="agregarMetadato()"
               >
-                <i class="fas fa-plus"></i> Agregar metadato
+                <i-lucide [img]="PlusIcon" class="lucide-icon-sm"></i-lucide>
+                Agregar metadato
               </button>
             </div>
           </div>
@@ -335,14 +586,28 @@
               class="btn btn-outline"
               (click)="cerrarModal()"
             >
+              <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
               Cancelar
             </button>
             <button
               type="submit"
               class="btn btn-primary"
-              [disabled]="documentoForm.invalid"
+              [disabled]="documentoForm.invalid || isSubmitting"
             >
-              {{ isEditing ? "Actualizar" : "Crear" }}
+              <i-lucide
+                [img]="
+                  isSubmitting ? LoaderIcon : isEditing ? SaveIcon : PlusIcon
+                "
+                class="lucide-icon-sm"
+                [class.animate-spin]="isSubmitting"
+              ></i-lucide>
+              {{
+                isSubmitting
+                  ? "Guardando..."
+                  : isEditing
+                  ? "Actualizar"
+                  : "Crear"
+              }}
             </button>
           </div>
         </form>
@@ -351,32 +616,65 @@
   </div>
 
   <!-- Modal para gestionar versiones -->
-  <div class="modal" *ngIf="isVersionModalOpen">
+  <div
+    class="modal"
+    *ngIf="isVersionModalOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Gestionar versiones del documento"
+  >
     <div class="modal-backdrop" (click)="cerrarModal()"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Versiones del documento</h3>
-        <button class="btn-close" (click)="cerrarModal()">
-          <i class="fas fa-times"></i>
+        <h3>
+          <i-lucide
+            [img]="GitBranchIcon"
+            class="modal-header-icon lucide-icon"
+          ></i-lucide>
+          Versiones del documento
+        </h3>
+        <button
+          class="btn-close"
+          (click)="cerrarModal()"
+          [attr.aria-label]="'Cerrar modal'"
+        >
+          <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
         </button>
       </div>
       <div class="modal-body">
         <div *ngIf="currentDocumentoId">
           <div class="version-list">
-            <h4>Historial de versiones</h4>
+            <h4>
+              <i-lucide
+                [img]="HistoryIcon"
+                class="form-section-icon lucide-icon"
+              ></i-lucide>
+              Historial de versiones
+            </h4>
             <div *ngIf="documentoSinVersiones" class="no-versions">
-              No hay versiones disponibles para este documento.
+              <i-lucide
+                [img]="GitBranchIcon"
+                class="empty-state-icon"
+              ></i-lucide>
+              <p>No hay versiones disponibles para este documento.</p>
             </div>
             <div
-              *ngFor="let version of documentoActual?.versiones"
+              *ngFor="
+                let version of documentoActual?.versiones;
+                trackBy: trackByVersionId
+              "
               class="version-item"
             >
               <div class="version-header">
                 <div class="version-info">
                   <span class="version-number">v{{ version.version }}</span>
-                  <span class="version-date">{{
-                    version.fecha_subida | date : "dd/MM/yyyy HH:mm"
-                  }}</span>
+                  <span class="version-date">
+                    <i-lucide
+                      [img]="CalendarIcon"
+                      class="lucide-icon-sm"
+                    ></i-lucide>
+                    {{ version.fecha_subida | date : "dd/MM/yyyy HH:mm" }}
+                  </span>
                 </div>
                 <div class="version-actions">
                   <button
@@ -384,62 +682,89 @@
                     title="Descargar versión"
                     (click)="descargarVersion(version)"
                     *ngIf="tienePermisoDescargar()"
+                    [attr.aria-label]="'Descargar versión ' + version.version"
                   >
-                    <i class="fas fa-download"></i>
+                    <i-lucide
+                      [img]="DownloadIcon"
+                      class="lucide-icon-sm"
+                    ></i-lucide>
                   </button>
                 </div>
               </div>
               <div class="version-details">
                 <div class="version-file">
-                  <i class="fas fa-file-pdf"></i>
+                  <i-lucide [img]="FileIcon" class="lucide-icon-sm"></i-lucide>
                   {{ version.nombre_archivo || "documento.pdf" }}
                 </div>
                 <div class="version-user">
-                  <i class="fas fa-user"></i>
+                  <i-lucide [img]="UserIcon" class="lucide-icon-sm"></i-lucide>
                   {{ version.subido_por.username }}
                 </div>
                 <div class="version-comments" *ngIf="version.comentarios">
-                  <i class="fas fa-comment"></i> {{ version.comentarios }}
+                  <i-lucide
+                    [img]="MessageSquareIcon"
+                    class="lucide-icon-sm"
+                  ></i-lucide>
+                  {{ version.comentarios }}
                 </div>
               </div>
             </div>
           </div>
 
           <div class="version-upload">
-            <h4>Subir nueva versión</h4>
+            <h4>
+              <i-lucide
+                [img]="UploadIcon"
+                class="form-section-icon lucide-icon"
+              ></i-lucide>
+              Subir nueva versión
+            </h4>
             <form [formGroup]="versionForm" (ngSubmit)="guardarVersion()">
               <div class="form-group">
-                <label for="archivo" class="form-label">Archivo</label>
+                <label for="archivo-version" class="form-label">
+                  <i-lucide [img]="FileIcon" class="lucide-icon-sm"></i-lucide>
+                  Archivo *
+                </label>
                 <div class="file-upload">
                   <input
                     type="file"
-                    id="archivo"
+                    id="archivo-version"
                     class="file-input"
                     (change)="onFileChange($event)"
-                    required
+                    accept=".pdf,.docx,.xlsx,.pptx,.txt"
+                    [attr.aria-describedby]="'archivo-version-hint'"
                   />
-                  <label for="archivo" class="file-label">
-                    <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivo
+                  <label for="archivo-version" class="file-label">
+                    <div class="file-label-content">
+                      <i-lucide
+                        [img]="UploadCloudIcon"
+                        class="file-label-icon"
+                      ></i-lucide>
+                      <div class="file-label-text">
+                        {{
+                          selectedFile
+                            ? selectedFile.name
+                            : "Seleccionar archivo"
+                        }}
+                      </div>
+                      <div class="file-label-hint" id="archivo-version-hint">
+                        Formatos: PDF, DOCX, XLSX, PPTX, TXT (máx. 10MB)
+                      </div>
+                    </div>
                   </label>
                 </div>
-                <div
-                  *ngIf="
-                    versionForm.get('archivo')?.invalid &&
-                    versionForm.get('archivo')?.touched
-                  "
-                  class="form-error"
-                >
-                  El archivo es obligatorio.
-                </div>
-                <small class="text-muted"
-                  >Formatos permitidos: PDF, DOCX, XLSX (máx. 10MB)</small
-                >
               </div>
 
               <div class="form-group">
-                <label for="comentarios" class="form-label">Comentarios</label>
+                <label for="comentarios-version" class="form-label">
+                  <i-lucide
+                    [img]="MessageSquareIcon"
+                    class="lucide-icon-sm"
+                  ></i-lucide>
+                  Comentarios
+                </label>
                 <textarea
-                  id="comentarios"
+                  id="comentarios-version"
                   formControlName="comentarios"
                   class="form-control"
                   rows="3"
@@ -453,14 +778,22 @@
                   class="btn btn-outline"
                   (click)="cerrarModal()"
                 >
+                  <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   class="btn btn-primary"
-                  [disabled]="versionForm.invalid"
+                  [disabled]="
+                    versionForm.invalid || !selectedFile || isSubmitting
+                  "
                 >
-                  Subir versión
+                  <i-lucide
+                    [img]="isSubmitting ? LoaderIcon : UploadIcon"
+                    class="lucide-icon-sm"
+                    [class.animate-spin]="isSubmitting"
+                  ></i-lucide>
+                  {{ isSubmitting ? "Subiendo..." : "Subir versión" }}
                 </button>
               </div>
             </form>
@@ -471,33 +804,72 @@
   </div>
 
   <!-- Modal para gestionar permisos -->
-  <div class="modal" *ngIf="isPermisosModalOpen">
+  <div
+    class="modal"
+    *ngIf="isPermisosModalOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Gestionar permisos del documento"
+  >
     <div class="modal-backdrop" (click)="cerrarModal()"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Permisos del documento</h3>
-        <button class="btn-close" (click)="cerrarModal()">
-          <i class="fas fa-times"></i>
+        <h3>
+          <i-lucide
+            [img]="ShieldIcon"
+            class="modal-header-icon lucide-icon"
+          ></i-lucide>
+          Permisos del documento
+        </h3>
+        <button
+          class="btn-close"
+          (click)="cerrarModal()"
+          [attr.aria-label]="'Cerrar modal'"
+        >
+          <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
         </button>
       </div>
       <div class="modal-body">
         <form [formGroup]="permisoForm" (ngSubmit)="guardarPermisos()">
           <div class="permisos-header">
-            <h4>Usuarios con acceso</h4>
+            <h4>
+              <i-lucide
+                [img]="UsersIcon"
+                class="form-section-icon lucide-icon"
+              ></i-lucide>
+              Usuarios con acceso
+            </h4>
             <div class="dropdown">
               <button
                 type="button"
-                class="btn btn-outline btn-sm dropdown-toggle"
+                class="dropdown-toggle"
                 (click)="abrirDropdown()"
+                [attr.aria-expanded]="isDropdownOpen"
+                [attr.aria-haspopup]="'listbox'"
               >
+                <i-lucide
+                  [img]="UserPlusIcon"
+                  class="lucide-icon-sm"
+                ></i-lucide>
                 Agregar usuario
+                <i-lucide
+                  [img]="ChevronDownIcon"
+                  class="lucide-icon-sm"
+                ></i-lucide>
               </button>
-              <div class="dropdown-menu" [class.show]="isDropdownOpen">
+              <div
+                class="dropdown-menu"
+                [class.show]="isDropdownOpen"
+                role="listbox"
+              >
                 <div
-                  *ngFor="let usuario of this.usuarios"
+                  *ngFor="let usuario of usuarios; trackBy: trackByUserId"
                   class="dropdown-item"
                   (click)="agregarUsuarioPermiso(usuario)"
+                  role="option"
+                  [attr.aria-label]="'Agregar usuario ' + usuario.username"
                 >
+                  <i-lucide [img]="UserIcon" class="lucide-icon-sm"></i-lucide>
                   {{ usuario.username }}
                 </div>
               </div>
@@ -508,13 +880,15 @@
             <div
               *ngFor="
                 let permiso of usuariosPermisosArray.controls;
-                let i = index
+                let i = index;
+                trackBy: trackByPermisoIndex
               "
               [formGroupName]="i"
               class="permiso-row"
             >
               <div class="permiso-user">
                 <input type="hidden" formControlName="usuario_id" />
+                <i-lucide [img]="UserIcon" class="lucide-icon-sm"></i-lucide>
                 <span>{{ permiso.get("username")?.value }}</span>
               </div>
               <div class="permiso-options">
@@ -524,9 +898,10 @@
                     [id]="'puede_ver_' + i"
                     formControlName="puede_ver"
                   />
-                  <label [for]="'puede_ver_' + i" class="checkbox-label"
-                    >Ver</label
-                  >
+                  <label [for]="'puede_ver_' + i" class="checkbox-label">
+                    <i-lucide [img]="EyeIcon" class="lucide-icon-sm"></i-lucide>
+                    Ver
+                  </label>
                 </div>
                 <div class="checkbox-container">
                   <input
@@ -534,9 +909,13 @@
                     [id]="'puede_editar_' + i"
                     formControlName="puede_editar"
                   />
-                  <label [for]="'puede_editar_' + i" class="checkbox-label"
-                    >Editar</label
-                  >
+                  <label [for]="'puede_editar_' + i" class="checkbox-label">
+                    <i-lucide
+                      [img]="EditIcon"
+                      class="lucide-icon-sm"
+                    ></i-lucide>
+                    Editar
+                  </label>
                 </div>
                 <div class="checkbox-container">
                   <input
@@ -544,9 +923,13 @@
                     [id]="'puede_descargar_' + i"
                     formControlName="puede_descargar"
                   />
-                  <label [for]="'puede_descargar_' + i" class="checkbox-label"
-                    >Descargar</label
-                  >
+                  <label [for]="'puede_descargar_' + i" class="checkbox-label">
+                    <i-lucide
+                      [img]="DownloadIcon"
+                      class="lucide-icon-sm"
+                    ></i-lucide>
+                    Descargar
+                  </label>
                 </div>
                 <div class="checkbox-container">
                   <input
@@ -554,24 +937,35 @@
                     [id]="'puede_eliminar_' + i"
                     formControlName="puede_eliminar"
                   />
-                  <label [for]="'puede_eliminar_' + i" class="checkbox-label"
-                    >Eliminar</label
-                  >
+                  <label [for]="'puede_eliminar_' + i" class="checkbox-label">
+                    <i-lucide
+                      [img]="TrashIcon"
+                      class="lucide-icon-sm"
+                    ></i-lucide>
+                    Eliminar
+                  </label>
                 </div>
                 <button
                   type="button"
                   class="btn-icon btn-danger"
                   (click)="eliminarUsuarioPermiso(i)"
+                  [attr.aria-label]="
+                    'Eliminar permisos de usuario ' +
+                    permiso.get('username')?.value
+                  "
                 >
-                  <i class="fas fa-times"></i>
+                  <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
                 </button>
               </div>
             </div>
           </div>
 
           <div *ngIf="usuariosPermisosArray.length === 0" class="no-permisos">
-            No hay permisos asignados. Agregue usuarios para gestionar sus
-            permisos.
+            <i-lucide [img]="ShieldIcon" class="empty-state-icon"></i-lucide>
+            <p>
+              No hay permisos asignados. Agregue usuarios para gestionar sus
+              permisos.
+            </p>
           </div>
 
           <div class="modal-footer">
@@ -580,10 +974,20 @@
               class="btn btn-outline"
               (click)="cerrarModal()"
             >
+              <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
               Cancelar
             </button>
-            <button type="submit" class="btn btn-primary">
-              Guardar permisos
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSubmitting"
+            >
+              <i-lucide
+                [img]="isSubmitting ? LoaderIcon : SaveIcon"
+                class="lucide-icon-sm"
+                [class.animate-spin]="isSubmitting"
+              ></i-lucide>
+              {{ isSubmitting ? "Guardando..." : "Guardar permisos" }}
             </button>
           </div>
         </form>
@@ -592,30 +996,54 @@
   </div>
 
   <!-- Modal para gestionar metadatos -->
-  <div class="modal" *ngIf="isMetadatosModalOpen">
+  <div
+    class="modal"
+    *ngIf="isMetadatosModalOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Gestionar metadatos del documento"
+  >
     <div class="modal-backdrop" (click)="cerrarModal()"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Metadatos del documento</h3>
-        <button class="btn-close" (click)="cerrarModal()">
-          <i class="fas fa-times"></i>
+        <h3>
+          <i-lucide
+            [img]="TagsIcon"
+            class="modal-header-icon lucide-icon"
+          ></i-lucide>
+          Metadatos del documento
+        </h3>
+        <button
+          class="btn-close"
+          (click)="cerrarModal()"
+          [attr.aria-label]="'Cerrar modal'"
+        >
+          <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
         </button>
       </div>
       <div class="modal-body">
         <form [formGroup]="documentoForm" (ngSubmit)="guardarMetadatos()">
           <div formArrayName="metadatos">
             <div
-              *ngFor="let metadato of metadatosArray.controls; let i = index"
+              *ngFor="
+                let metadato of metadatosArray.controls;
+                let i = index;
+                trackBy: trackByMetadatoIndex
+              "
               [formGroupName]="i"
               class="metadato-row"
             >
               <div class="metadato-fields">
                 <div class="form-group">
+                  <label [for]="'meta-clave-' + i" class="form-label"
+                    >Clave</label
+                  >
                   <input
                     type="text"
+                    [id]="'meta-clave-' + i"
                     formControlName="clave"
                     class="form-control"
-                    placeholder="Clave"
+                    placeholder="Ej: Cliente, Proyecto, Categoría"
                     [class.is-invalid]="
                       metadato.get('clave')?.invalid &&
                       metadato.get('clave')?.touched
@@ -623,11 +1051,15 @@
                   />
                 </div>
                 <div class="form-group">
+                  <label [for]="'meta-valor-' + i" class="form-label"
+                    >Valor</label
+                  >
                   <input
                     type="text"
+                    [id]="'meta-valor-' + i"
                     formControlName="valor"
                     class="form-control"
-                    placeholder="Valor"
+                    placeholder="Valor del metadato"
                     [class.is-invalid]="
                       metadato.get('valor')?.invalid &&
                       metadato.get('valor')?.touched
@@ -638,8 +1070,9 @@
                   type="button"
                   class="btn-icon btn-danger"
                   (click)="eliminarMetadato(i)"
+                  [attr.aria-label]="'Eliminar metadato ' + (i + 1)"
                 >
-                  <i class="fas fa-times"></i>
+                  <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
                 </button>
               </div>
             </div>
@@ -648,7 +1081,8 @@
               class="btn btn-outline btn-sm"
               (click)="agregarMetadato()"
             >
-              <i class="fas fa-plus"></i> Agregar metadato
+              <i-lucide [img]="PlusIcon" class="lucide-icon-sm"></i-lucide>
+              Agregar metadato
             </button>
           </div>
 
@@ -658,10 +1092,20 @@
               class="btn btn-outline"
               (click)="cerrarModal()"
             >
+              <i-lucide [img]="XIcon" class="lucide-icon-sm"></i-lucide>
               Cancelar
             </button>
-            <button type="submit" class="btn btn-primary">
-              Guardar metadatos
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSubmitting"
+            >
+              <i-lucide
+                [img]="isSubmitting ? LoaderIcon : SaveIcon"
+                class="lucide-icon-sm"
+                [class.animate-spin]="isSubmitting"
+              ></i-lucide>
+              {{ isSubmitting ? "Guardando..." : "Guardar metadatos" }}
             </button>
           </div>
         </form>
@@ -669,6 +1113,8 @@
     </div>
   </div>
 </div>
+
+<!-- Componente de detalles del documento -->
 <app-document-details
   [documento]="selectedDocument"
   [visible]="modalVisible"
