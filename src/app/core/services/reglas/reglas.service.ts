@@ -17,7 +17,7 @@ export class ReglasService {
   }
 
   getReglaById(id: number) {
-    return this.http.get<ReglaAutomatica>(`${this.REGLAS_URL}/reglas/${id}`);
+    return this.http.get<ReglaAutomatica>(`${this.REGLAS_URL}/reglas/${id}/`);
   }
 
   createRegla(regla: ReglaAutomatica) {
@@ -29,12 +29,12 @@ export class ReglasService {
 
   updateRegla(id: number, regla: ReglaAutomatica) {
     return this.http.put<Partial<ReglaAutomatica>>(
-      `${this.REGLAS_URL}/reglas/${id}`,
+      `${this.REGLAS_URL}/reglas/${id}/`,
       regla
     );
   }
 
   deleteRegla(id: number) {
-    return this.http.delete<void>(`${this.REGLAS_URL}/reglas/${id}`);
+    return this.http.delete<void>(`${this.REGLAS_URL}/reglas/${id}/`);
   }
 }
