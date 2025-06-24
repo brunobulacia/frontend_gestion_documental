@@ -138,14 +138,14 @@
             <td class="formulario-column">
               <span class="formulario-badge">
                 <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
-                Form #{{ respuesta.formulario }}
+                {{ getFormularioNombre(respuesta.formulario) }}
               </span>
             </td>
             <td class="documento-column">
               <div class="documento-badge">
                 <i-lucide [img]="FileIcon" class="lucide-icon"></i-lucide>
                 <span [title]="respuesta.documento">
-                  {{ respuesta.documento | slice : 0 : 8 }}...
+                  {{ getDocumentoNombre(respuesta.documento) }}
                 </span>
               </div>
             </td>
@@ -267,63 +267,58 @@
       (ngSubmit)="guardarRespuesta()"
       novalidate
     >
-      <!-- Campo Formulario -->
+      <!-- Campo Formulario con Autocomplete -->
       <div class="form-field">
         <label for="formulario" class="form-label">
           <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
-          ID del Formulario *
+          Formulario *
         </label>
         <div class="input-container">
-          <input
-            pInputText
-            id="formulario"
-            type="number"
-            formControlName="formulario"
-            placeholder="Ingrese el ID del formulario"
-            class="form-input"
-            min="1"
-            autocomplete="off"
-          />
+          <p-autocomplete
+            [(ngModel)]="formularioSeleccionado"
+            [ngModelOptions]="{ standalone: true }"
+            [suggestions]="formularioSugerencias"
+            (completeMethod)="searchFormularios($event)"
+            field="nombre"
+            [dropdown]="true"
+            placeholder="Seleccione un formulario"
+            styleClass="form-input"
+            [class.ng-invalid]="
+              respuestaForm.get('formulario')?.invalid &&
+              respuestaForm.get('formulario')?.touched
+            "
+            (onSelect)="onFormularioSelect($event)"
+            (onClear)="onFormularioClear()"
+          >
+          </p-autocomplete>
         </div>
-        <small
-          *ngIf="
-            respuestaForm.get('formulario')?.invalid &&
-            respuestaForm.get('formulario')?.touched
-          "
-          class="error-message"
-        >
-          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
-          {{ getErrorMessage("formulario") }}
-        </small>
       </div>
 
-      <!-- Campo Documento -->
+      <!-- Campo Documento con Autocomplete -->
       <div class="form-field">
         <label for="documento" class="form-label">
           <i-lucide [img]="FileIcon" class="lucide-icon"></i-lucide>
-          ID del Documento *
+          Documento *
         </label>
         <div class="input-container">
-          <input
-            pInputText
-            id="documento"
-            type="text"
-            formControlName="documento"
-            placeholder="Ingrese el ID del documento"
-            class="form-input"
-            autocomplete="off"
-          />
+          <p-autocomplete
+            [(ngModel)]="documentoSeleccionado"
+            [ngModelOptions]="{ standalone: true }"
+            [suggestions]="documentoSugerencias"
+            (completeMethod)="searchDocumentos($event)"
+            field="titulo"
+            [dropdown]="true"
+            placeholder="Seleccione un documento"
+            styleClass="form-input"
+            [class.ng-invalid]="
+              respuestaForm.get('documento')?.invalid &&
+              respuestaForm.get('documento')?.touched
+            "
+            (onSelect)="onDocumentoSelect($event)"
+            (onClear)="onDocumentoClear()"
+          >
+          </p-autocomplete>
         </div>
-        <small
-          *ngIf="
-            respuestaForm.get('documento')?.invalid &&
-            respuestaForm.get('documento')?.touched
-          "
-          class="error-message"
-        >
-          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
-          {{ getErrorMessage("documento") }}
-        </small>
       </div>
 
       <!-- Campo Datos -->
@@ -337,22 +332,13 @@
             pInputTextarea
             id="datos"
             formControlName="datos"
-            placeholder="Ingrese los datos de la respuesta (formato JSON)"
+            placeholder="Ingrese los datos de la respuesta"
             rows="6"
             class="form-textarea"
             [autoResize]="true"
           ></textarea>
         </div>
-        <small
-          *ngIf="
-            respuestaForm.get('datos')?.invalid &&
-            respuestaForm.get('datos')?.touched
-          "
-          class="error-message"
-        >
-          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
-          {{ getErrorMessage("datos") }}
-        </small>
+
         <small
           style="
             color: var(--color-text-light);
@@ -361,7 +347,7 @@
             display: block;
           "
         >
-          Ingrese los datos en formato JSON válido.
+          Ingrese cualquier texto con los datos de la respuesta.
         </small>
       </div>
     </form>
@@ -382,7 +368,7 @@
         [label]="modoEdicion ? 'Actualizar' : 'Crear'"
         icon="pi pi-check"
         (onClick)="guardarRespuesta()"
-        [disabled]="respuestaForm.invalid || guardando"
+        [disabled]="!esFormularioValido() || guardando"
         [loading]="guardando"
         styleClass="p-button-primary"
       >
@@ -430,9 +416,9 @@
           <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
           Formulario:
         </label>
-        <span class="detalle-valor"
-          >#{{ respuestaSeleccionada.formulario }}</span
-        >
+        <span class="detalle-valor">{{
+          getFormularioNombre(respuestaSeleccionada.formulario)
+        }}</span>
       </div>
 
       <div class="detalle-item">
@@ -440,7 +426,9 @@
           <i-lucide [img]="FileIcon" class="lucide-icon"></i-lucide>
           Documento:
         </label>
-        <span class="detalle-valor">{{ respuestaSeleccionada.documento }}</span>
+        <span class="detalle-valor">{{
+          getDocumentoNombre(respuestaSeleccionada.documento)
+        }}</span>
       </div>
 
       <div class="detalle-item">

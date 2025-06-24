@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import {
   FormBuilder,
-  FormGroup,
+  type FormGroup,
   Validators,
   ReactiveFormsModule,
   FormsModule,
@@ -15,6 +15,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Textarea } from 'primeng/inputtextarea';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -47,8 +48,8 @@ import {
 // Servicios y Modelos
 import { RespoFormService } from '../../core/services/formularios/respo-form.service';
 import { DocumentsService } from '../../core/services/documents.service';
-import { RespuestaFormularioDocumento } from '../../models/respo-form.model';
-import { text } from 'stream/consumers';
+import type { RespuestaFormularioDocumento } from '../../models/respo-form.model';
+import { FormulariosService } from '../../core/services/formularios/formularios.service';
 
 @Component({
   selector: 'app-respuesta-form',
@@ -64,6 +65,7 @@ import { text } from 'stream/consumers';
     ButtonModule,
     InputTextModule,
     Textarea,
+    AutoCompleteModule,
     ToastModule,
     ConfirmDialogModule,
   ],
@@ -127,39 +129,72 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
 
   // Nombres de documentos
   nombresDocumentos: { id: string; titulo: string }[] = [];
+  formularioNombres: { id: number; nombre: string }[] = [];
+
+  // Objetos seleccionados para autocomplete
+  formularioSeleccionado: { id: number; nombre: string } | null = null;
+  formularioSugerencias: { id: number; nombre: string }[] = [];
+
+  // Para p-autocomplete de documentos
+  documentoSeleccionado: { id: string; titulo: string } | null = null;
+  documentoSugerencias: { id: string; titulo: string }[] = [];
 
   constructor(
     private respoFormService: RespoFormService,
     private documentService: DocumentsService,
+    private formulariosService: FormulariosService,
     private fb: FormBuilder,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
   ) {
     this.completado_por = this.obtenerUsuarioActual();
     this.respuestaForm = this.crearFormulario();
-
-    // Cargar nombres de documentos
-    const subNombres = this.documentService.getDocs().subscribe({
-      next: (data) => {
-        this.nombresDocumentos = Array.isArray(data)
-          ? data.map((doc: any) => ({
-              id: doc.id,
-              titulo: doc.titulo || 'Documento sin título',
-            }))
-          : [];
-        console.log('Nombres de documentos cargados:', this.nombresDocumentos);
-      },
-      error: (error) => {
-        console.error('Error al cargar nombres de documentos:', error);
-        this.mostrarError(
-          'Error al cargar los nombres de documentos. Por favor, intente nuevamente.'
-        );
-      },
-    });
   }
 
   ngOnInit(): void {
     this.cargarRespuestas();
+
+    // Cargar formularios
+    const subFormularios = this.formulariosService.getFormularios().subscribe({
+      next: (formularios) => {
+        this.formularioNombres = formularios.map((f) => ({
+          id: f.id,
+          nombre: f.nombre,
+        }));
+        this.formularioSugerencias = [...this.formularioNombres];
+        console.log('Formularios cargados:', this.formularioNombres);
+      },
+      error: (error) => {
+        console.error('Error al cargar formularios:', error);
+        this.mostrarError(
+          'Error al cargar los formularios. Por favor, intente nuevamente.'
+        );
+      },
+    });
+
+    this.subscriptions.add(subFormularios);
+
+    // Cargar documentos
+    const subDocumentos = this.documentService.getDocs().subscribe({
+      next: (documentos) => {
+        this.nombresDocumentos = Array.isArray(documentos)
+          ? documentos.map((doc: any) => ({
+              id: doc.id,
+              titulo: doc.titulo || 'Documento sin título',
+            }))
+          : [];
+        this.documentoSugerencias = [...this.nombresDocumentos];
+        console.log('Documentos cargados:', this.nombresDocumentos);
+      },
+      error: (error) => {
+        console.error('Error al cargar documentos:', error);
+        this.mostrarError(
+          'Error al cargar los documentos. Por favor, intente nuevamente.'
+        );
+      },
+    });
+
+    this.subscriptions.add(subDocumentos);
   }
 
   ngOnDestroy(): void {
@@ -186,10 +221,21 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
    */
   private crearFormulario(): FormGroup {
     return this.fb.group({
-      formulario: ['', [Validators.required, Validators.min(1)]],
-      documento: ['', [Validators.required, Validators.minLength(1)]],
-      datos: ['', [Validators.required, Validators.minLength(1)]],
+      formulario: ['', [Validators.required]],
+      documento: ['', [Validators.required]],
+      datos: ['', [Validators.required, Validators.minLength(3)]],
     });
+  }
+
+  /**
+   * Verifica si el formulario es válido
+   */
+  esFormularioValido(): boolean {
+    const datosValidos = this.respuestaForm.get('datos')?.valid || false;
+    const formularioValido = this.formularioSeleccionado !== null;
+    const documentoValido = this.documentoSeleccionado !== null;
+
+    return datosValidos && formularioValido && documentoValido;
   }
 
   /**
@@ -277,6 +323,8 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
   abrirModalCrear(): void {
     this.modoEdicion = false;
     this.respuestaSeleccionada = null;
+    this.formularioSeleccionado = null;
+    this.documentoSeleccionado = null;
     this.respuestaForm.reset();
     this.mostrarModal = true;
   }
@@ -287,6 +335,15 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
   abrirModalEditar(respuesta: RespuestaFormularioDocumento): void {
     this.modoEdicion = true;
     this.respuestaSeleccionada = respuesta;
+
+    // Buscar y establecer el formulario seleccionado
+    this.formularioSeleccionado =
+      this.formularioNombres.find((f) => f.id === respuesta.formulario) || null;
+
+    // Buscar y establecer el documento seleccionado
+    this.documentoSeleccionado =
+      this.nombresDocumentos.find((d) => d.id === respuesta.documento) || null;
+
     this.respuestaForm.patchValue({
       formulario: respuesta.formulario,
       documento: respuesta.documento,
@@ -310,6 +367,8 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
     this.mostrarModal = false;
     this.respuestaForm.reset();
     this.respuestaSeleccionada = null;
+    this.formularioSeleccionado = null;
+    this.documentoSeleccionado = null;
     this.guardando = false;
   }
 
@@ -325,20 +384,41 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
    * Guarda la respuesta (crear o actualizar)
    */
   guardarRespuesta(): void {
-    if (this.respuestaForm.invalid || this.guardando) {
-      this.marcarCamposInvalidos();
+    // Marcar todos los campos como tocados para mostrar errores
+    this.marcarCamposInvalidos();
+
+    if (!this.esFormularioValido() || this.guardando) {
+      console.log('Formulario inválido:', {
+        formularioSeleccionado: this.formularioSeleccionado,
+        documentoSeleccionado: this.documentoSeleccionado,
+        datosValidos: this.respuestaForm.get('datos')?.valid,
+        datosValue: this.respuestaForm.get('datos')?.value,
+      });
+      this.mostrarError('Por favor, complete todos los campos obligatorios.');
       return;
     }
 
     this.guardando = true;
     const datosRespuesta = this.respuestaForm.value;
 
+    // Obtener IDs desde los objetos seleccionados
+    const formularioId = this.formularioSeleccionado?.id;
+    const documentoId = this.documentoSeleccionado?.id;
+
+    if (!formularioId || !documentoId) {
+      this.mostrarError(
+        'Por favor, seleccione un formulario y un documento válidos.'
+      );
+      this.guardando = false;
+      return;
+    }
+
     if (this.modoEdicion && this.respuestaSeleccionada) {
       // Actualizar respuesta existente
       const respuestaActualizada: RespuestaFormularioDocumento = {
         ...this.respuestaSeleccionada,
-        formulario: Number.parseInt(datosRespuesta.formulario),
-        documento: datosRespuesta.documento.trim(),
+        formulario: formularioId,
+        documento: documentoId.toString(),
         datos: datosRespuesta.datos.trim(),
       };
 
@@ -366,8 +446,8 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
     } else {
       // Crear nueva respuesta
       const nuevaRespuesta: Partial<RespuestaFormularioDocumento> = {
-        formulario: Number.parseInt(datosRespuesta.formulario),
-        documento: datosRespuesta.documento.trim(),
+        formulario: formularioId,
+        documento: documentoId.toString(),
         datos: datosRespuesta.datos.trim(),
         completado_por: this.completado_por,
         fecha_respuesta: new Date().toISOString(),
@@ -437,7 +517,15 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
    */
   getDocumentoNombre(id: string): string {
     const nombre = this.nombresDocumentos.find((t) => t.id === id);
-    return nombre ? nombre.titulo : 'Desconocido';
+    return nombre ? nombre.titulo : 'Cargando...';
+  }
+
+  /**
+   * Obtiene el nombre del formulario
+   */
+  getFormularioNombre(id: number): string {
+    const nombre = this.formularioNombres.find((f) => f.id === id);
+    return nombre ? nombre.nombre : 'Cargando...';
   }
 
   /**
@@ -495,10 +583,6 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
       return `Mínimo ${requiredLength} caracteres`;
     }
 
-    if (errors['min']) {
-      return 'El valor debe ser mayor a 0';
-    }
-
     return 'Campo inválido';
   }
 
@@ -546,5 +630,51 @@ export class RespuestaFormComponent implements OnInit, OnDestroy {
     respuesta: RespuestaFormularioDocumento
   ): number {
     return respuesta.id;
+  }
+
+  // Métodos para manejar selección de formulario
+  onFormularioSelect(event: any): void {
+    this.respuestaForm.patchValue({
+      formulario: event.id,
+    });
+    console.log('Formulario seleccionado:', event);
+  }
+
+  onFormularioClear(): void {
+    this.formularioSeleccionado = null;
+    this.respuestaForm.patchValue({
+      formulario: null,
+    });
+  }
+
+  // Métodos para manejar selección de documento
+  onDocumentoSelect(event: any): void {
+    this.respuestaForm.patchValue({
+      documento: event.id,
+    });
+    console.log('Documento seleccionado:', event);
+  }
+
+  onDocumentoClear(): void {
+    this.documentoSeleccionado = null;
+    this.respuestaForm.patchValue({
+      documento: null,
+    });
+  }
+
+  // Métodos para autocomplete de formularios
+  searchFormularios(event: any): void {
+    const query = event.query.toLowerCase();
+    this.formularioSugerencias = this.formularioNombres.filter((f) =>
+      f.nombre.toLowerCase().includes(query)
+    );
+  }
+
+  // Métodos para autocomplete de documentos
+  searchDocumentos(event: any): void {
+    const query = event.query.toLowerCase();
+    this.documentoSugerencias = this.nombresDocumentos.filter((d) =>
+      d.titulo.toLowerCase().includes(query)
+    );
   }
 }
