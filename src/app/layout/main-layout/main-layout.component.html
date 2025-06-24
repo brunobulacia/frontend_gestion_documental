@@ -25,6 +25,7 @@
             routerLink="/dashboard"
             routerLinkActive="active"
             class="sidebar-link"
+            (click)="onNavigate()"
             [attr.aria-current]="isActiveRoute('/dashboard') ? 'page' : null"
           >
             <i-lucide
@@ -40,6 +41,7 @@
             routerLink="/documents"
             routerLinkActive="active"
             class="sidebar-link"
+            (click)="onNavigate()"
             [attr.aria-current]="isActiveRoute('/documents') ? 'page' : null"
           >
             <i-lucide
@@ -55,6 +57,7 @@
             routerLink="/workflows"
             routerLinkActive="active"
             class="sidebar-link"
+            (click)="onNavigate()"
             [attr.aria-current]="isActiveRoute('/workflows') ? 'page' : null"
           >
             <i-lucide
@@ -67,26 +70,10 @@
 
         <li class="sidebar-item">
           <a
-            routerLink="/control-panel"
-            routerLinkActive="active"
-            class="sidebar-link"
-            [attr.aria-current]="
-              isActiveRoute('/control-panel') ? 'page' : null
-            "
-          >
-            <i-lucide
-              [img]="SettingsIcon"
-              class="sidebar-icon lucide-icon"
-            ></i-lucide>
-            <span class="sidebar-text">Panel de Control</span>
-          </a>
-        </li>
-
-        <li class="sidebar-item">
-          <a
             routerLink="/planes"
             routerLinkActive="active"
             class="sidebar-link"
+            (click)="onNavigate()"
             [attr.aria-current]="isActiveRoute('/planes') ? 'page' : null"
           >
             <i-lucide
@@ -102,6 +89,7 @@
             routerLink="/formularios"
             routerLinkActive="active"
             class="sidebar-link"
+            (click)="onNavigate()"
             [attr.aria-current]="isActiveRoute('/formularios') ? 'page' : null"
           >
             <i-lucide
@@ -112,12 +100,32 @@
           </a>
         </li>
 
+        <li class="sidebar-item">
+          <a
+            routerLink="/resp-formulario"
+            routerLinkActive="active"
+            class="sidebar-link"
+            (click)="onNavigate()"
+            [attr.aria-current]="
+              isActiveRoute('/resp-formulario') ? 'page' : null
+            "
+          >
+            <i-lucide
+              [img]="ClipboardListIcon"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Formularios y Documentos</span>
+          </a>
+        </li>
+
         <li class="sidebar-item logout-item">
           <a
             class="sidebar-link logout-link"
+            [class.loading]="loggingOut"
             (click)="logout()"
             (keydown.enter)="logout()"
             (keydown.space)="logout()"
+            [attr.disabled]="loggingOut"
             tabindex="0"
             role="button"
             aria-label="Cerrar sesión"
@@ -125,8 +133,11 @@
             <i-lucide
               [img]="LogOutIcon"
               class="sidebar-icon lucide-icon"
+              [class.spinning]="loggingOut"
             ></i-lucide>
-            <span class="sidebar-text">Cerrar Sesión</span>
+            <span class="sidebar-text">
+              {{ loggingOut ? "Cerrando..." : "Cerrar Sesión" }}
+            </span>
           </a>
         </li>
       </ul>
@@ -184,4 +195,28 @@
       <router-outlet></router-outlet>
     </main>
   </div>
+
+  <!-- Toast para notificaciones -->
+  <p-toast
+    position="top-right"
+    [life]="5000"
+    [showTransformOptions]="'translateX(100%)'"
+    [hideTransformOptions]="'translateX(100%)'"
+    [showTransitionOptions]="'300ms ease-out'"
+    [hideTransitionOptions]="'250ms ease-in'"
+  >
+  </p-toast>
+
+  <!-- Modal de confirmación para logout -->
+  <p-confirmDialog
+    [style]="{ width: '450px', maxWidth: '90vw' }"
+    [baseZIndex]="10000"
+    [closable]="true"
+    [dismissableMask]="false"
+    rejectButtonStyleClass="p-button-text"
+    acceptButtonStyleClass="p-button-danger"
+  >
+  </p-confirmDialog>
 </div>
+
+<!-- NO ESTAN SIRVIENDO LOS DIALOGS OSEA NO SE RENDERIZAN -->

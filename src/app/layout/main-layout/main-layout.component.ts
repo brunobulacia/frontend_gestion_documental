@@ -9,6 +9,11 @@ import { AuthService } from '../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 
+// PrimeNG Services y Components
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+
 // Lucide Angular Icons
 import {
   LucideAngularModule,
@@ -34,7 +39,10 @@ import {
     RouterLink,
     RouterLinkActive,
     LucideAngularModule,
+    ToastModule,
+    ConfirmDialogModule,
   ],
+  providers: [MessageService, ConfirmationService],
   selector: 'app-main-layout',
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css'],
@@ -44,6 +52,7 @@ export default class MainLayoutComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
   isMobile = false;
   nombreUsuario = localStorage.getItem('username');
+
   // Información del usuario
   isAdmin = false;
   username = (() => {
@@ -57,6 +66,9 @@ export default class MainLayoutComponent implements OnInit, OnDestroy {
     }
     return null;
   })();
+
+  // Estado de carga para logout
+  loggingOut = false;
 
   // Suscripciones
   private subscriptions: Subscription[] = [];
@@ -75,7 +87,12 @@ export default class MainLayoutComponent implements OnInit, OnDestroy {
   readonly BellIcon = BellIcon;
   readonly UserIcon = UserIcon;
 
-  constructor(private authService: AuthService, private router: Router) {
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
+  ) {
     this.checkScreenSize();
   }
 
@@ -163,19 +180,85 @@ export default class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Maneja el cierre de sesión
+   * Maneja el cierre de sesión con confirmación elegante
    */
   logout(): void {
-    // Mostrar confirmación antes de cerrar sesión
-    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-      try {
+    // Prevenir múltiples clics durante el proceso de logout
+    if (this.loggingOut) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message:
+        '¿Estás seguro de que deseas cerrar sesión? Se perderán los cambios no guardados.',
+      header: 'Confirmar Cierre de Sesión',
+      icon: 'pi pi-sign-out',
+      acceptLabel: 'Sí, Cerrar Sesión',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger p-button-sm',
+      rejectButtonStyleClass: 'p-button-text p-button-sm',
+      defaultFocus: 'reject', // Foco en cancelar por seguridad
+      accept: () => {
+        this.performLogout();
+      },
+      reject: () => {
+        // Mostrar mensaje informativo si cancela
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Cancelado',
+          detail: 'El cierre de sesión ha sido cancelado',
+          life: 3000,
+        });
+      },
+    });
+  }
+
+  /**
+   * Ejecuta el proceso de cierre de sesión
+   */
+  private performLogout(): void {
+    this.loggingOut = true;
+
+    // Mostrar mensaje de carga
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Cerrando Sesión',
+      detail: 'Procesando cierre de sesión...',
+      life: 2000,
+    });
+
+    try {
+      // Simular un pequeño delay para mejor UX
+      setTimeout(() => {
         this.authService.logout();
-        // Opcional: mostrar mensaje de éxito
-        console.log('Sesión cerrada exitosamente');
-      } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-        // Opcional: mostrar mensaje de error
-      }
+
+        // Mostrar mensaje de éxito
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sesión Cerrada',
+          detail: 'Has cerrado sesión exitosamente. ¡Hasta pronto!',
+          life: 4000,
+        });
+
+        // Opcional: delay antes de redireccionar para que el usuario vea el mensaje
+        setTimeout(() => {
+          this.loggingOut = false;
+          // El AuthService debería manejar la redirección, pero por si acaso:
+          // this.router.navigate(['/login']);
+        }, 1000);
+      }, 500);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+
+      // Mostrar mensaje de error
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error al Cerrar Sesión',
+        detail: 'Ocurrió un error inesperado. Por favor, intenta nuevamente.',
+        life: 5000,
+      });
+
+      this.loggingOut = false;
     }
   }
 
@@ -196,5 +279,41 @@ export default class MainLayoutComponent implements OnInit, OnDestroy {
       event.preventDefault();
       action();
     }
+  }
+
+  /**
+   * Muestra notificaciones de bienvenida (opcional)
+   */
+  showWelcomeMessage(): void {
+    if (this.username) {
+      this.messageService.add({
+        severity: 'success',
+        summary: `¡Bienvenido, ${this.username}!`,
+        detail: 'Has iniciado sesión correctamente en el sistema',
+        life: 4000,
+      });
+    }
+  }
+
+  /**
+   * Muestra notificaciones de información del sistema (opcional)
+   */
+  showSystemNotification(
+    message: string,
+    type: 'success' | 'info' | 'warn' | 'error' = 'info'
+  ): void {
+    this.messageService.add({
+      severity: type,
+      summary: 'Notificación del Sistema',
+      detail: message,
+      life: 5000,
+    });
+  }
+
+  /**
+   * Limpia todas las notificaciones
+   */
+  clearAllNotifications(): void {
+    this.messageService.clear();
   }
 }

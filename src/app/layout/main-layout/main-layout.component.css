@@ -397,3 +397,115 @@
     display: block;
   }
 }
+
+/* Estilos adicionales para el logout mejorado */
+
+/* Estado de carga en el botón de logout */
+.logout-link.loading {
+  opacity: 0.7;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.logout-link.loading .sidebar-text {
+  color: var(--color-text-light);
+}
+
+/* Animación de spinning para el icono durante logout */
+.lucide-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para el toast personalizado */
+:host ::ng-deep .p-toast {
+  z-index: 9999;
+}
+
+:host ::ng-deep .p-toast .p-toast-message {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--color-border);
+}
+
+:host ::ng-deep .p-toast .p-toast-message.p-toast-message-success {
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+  border-color: var(--color-success);
+}
+
+:host ::ng-deep .p-toast .p-toast-message.p-toast-message-error {
+  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-dark) 100%);
+  border-color: var(--color-error);
+}
+
+:host ::ng-deep .p-toast .p-toast-message.p-toast-message-info {
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-dark) 100%);
+  border-color: var(--color-info);
+}
+
+:host ::ng-deep .p-toast .p-toast-message.p-toast-message-warn {
+  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+  border-color: var(--color-warning);
+}
+
+/* Estilos para el confirm dialog personalizado */
+:host ::ng-deep .p-confirm-dialog {
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--color-border);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-dialog-header {
+  background: var(--gradient-background);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 16px 16px 0 0;
+  padding: var(--spacing-lg);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-dialog-content {
+  padding: var(--spacing-xl);
+  background: var(--color-surface);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-dialog-footer {
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 16px 16px;
+  padding: var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-button {
+  border-radius: 8px;
+  font-weight: 600;
+  padding: var(--spacing-md) var(--spacing-lg);
+  transition: all 0.3s ease;
+}
+
+:host ::ng-deep .p-confirm-dialog .p-button:hover {
+  transform: translateY(-1px);
+}
+
+/* Responsive para toast y confirm dialog */
+@media (max-width: 768px) {
+  :host ::ng-deep .p-toast {
+    left: var(--spacing-md) !important;
+    right: var(--spacing-md) !important;
+    width: auto !important;
+  }
+
+  :host ::ng-deep .p-confirm-dialog {
+    width: calc(100vw - 2rem) !important;
+    max-width: none !important;
+    margin: var(--spacing-md);
+  }
+}

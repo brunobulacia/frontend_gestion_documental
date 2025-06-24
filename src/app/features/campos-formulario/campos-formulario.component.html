@@ -38,6 +38,7 @@
         class="create-button"
         (click)="abrirModalCrear()"
         [attr.aria-label]="'Crear nuevo campo para el formulario'"
+        type="button"
       >
         <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
         Nuevo Campo
@@ -62,6 +63,7 @@
       class="filter-button"
       (click)="toggleFiltros()"
       [attr.aria-label]="'Mostrar filtros avanzados'"
+      type="button"
     >
       <i-lucide [img]="FilterIcon" class="lucide-icon"></i-lucide>
       Filtros
@@ -86,7 +88,7 @@
       <p class="empty-description">
         Comienza agregando campos para definir la estructura de tu formulario.
       </p>
-      <button class="create-button" (click)="abrirModalCrear()">
+      <button class="create-button" (click)="abrirModalCrear()" type="button">
         <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
         Crear Primer Campo
       </button>
@@ -99,7 +101,7 @@
       <p class="empty-description">
         No se encontraron campos que coincidan con "{{ filtroTexto }}".
       </p>
-      <button class="filter-button" (click)="limpiarFiltros()">
+      <button class="filter-button" (click)="limpiarFiltros()" type="button">
         <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
         Limpiar Búsqueda
       </button>
@@ -152,7 +154,11 @@
                 [class.opciones-tooltip]="campo.opciones.length > 30"
                 [title]="campo.opciones"
               >
-                {{ campo.opciones }}
+                {{
+                  campo.opciones.length > 30
+                    ? (campo.opciones | slice : 0 : 30) + "..."
+                    : campo.opciones
+                }}
               </span>
               <span
                 *ngIf="!campo.opciones || !campo.opciones.trim()"
@@ -181,6 +187,7 @@
                   (click)="abrirModalEditar(campo)"
                   [attr.aria-label]="'Editar campo ' + campo.nombre"
                   title="Editar"
+                  type="button"
                 >
                   <i-lucide [img]="EditIcon" class="lucide-icon"></i-lucide>
                 </button>
@@ -189,6 +196,7 @@
                   (click)="confirmarEliminar(campo)"
                   [attr.aria-label]="'Eliminar campo ' + campo.nombre"
                   title="Eliminar"
+                  type="button"
                 >
                   <i-lucide [img]="TrashIcon" class="lucide-icon"></i-lucide>
                 </button>
@@ -208,29 +216,33 @@
   [closable]="true"
   [draggable]="false"
   [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
   styleClass="campo-dialog"
   [style]="{ width: '700px', maxWidth: '90vw' }"
   [header]="modoEdicion ? 'Editar Campo' : 'Crear Nuevo Campo'"
+  [baseZIndex]="10000"
 >
   <div class="modal-content">
     <form [formGroup]="campoForm" (ngSubmit)="guardarCampo()" novalidate>
+      <!-- Campo Nombre -->
       <div class="form-field">
-        <label for="nombre">Nombre del Campo *</label>
+        <label for="nombre" class="form-label">
+          <i-lucide [img]="TypeIcon" class="lucide-icon"></i-lucide>
+          Nombre del Campo *
+        </label>
         <div class="input-container">
           <input
+            pInputText
             id="nombre"
             type="text"
             formControlName="nombre"
             placeholder="Ingrese el nombre del campo"
-            [class.error]="
-              campoForm.get('nombre')?.invalid &&
-              campoForm.get('nombre')?.touched
-            "
             class="form-input"
+            autocomplete="off"
           />
-          <i-lucide [img]="TypeIcon" class="input-icon lucide-icon"></i-lucide>
         </div>
-        <div
+        <small
           *ngIf="
             campoForm.get('nombre')?.invalid && campoForm.get('nombre')?.touched
           "
@@ -238,33 +250,26 @@
         >
           <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
           {{ getErrorMessage("nombre") }}
-        </div>
+        </small>
       </div>
 
+      <!-- Campo Tipo -->
       <div class="form-field">
-        <label for="tipo">Tipo de Campo *</label>
+        <label for="tipo" class="form-label">
+          <i-lucide [img]="ListIcon" class="lucide-icon"></i-lucide>
+          Tipo de Campo *
+        </label>
         <div class="input-container">
-          <select
-            id="tipo"
-            formControlName="tipo"
-            [class.error]="
-              campoForm.get('tipo')?.invalid && campoForm.get('tipo')?.touched
-            "
-            class="form-select"
-          >
+          <select id="tipo" formControlName="tipo" class="form-select">
             <option value="">Seleccione un tipo</option>
             <option value="text">Texto</option>
             <option value="number">Número</option>
-            <option value="email">Email</option>
             <option value="date">Fecha</option>
             <option value="select">Lista desplegable</option>
             <option value="checkbox">Casilla de verificación</option>
-            <option value="textarea">Área de texto</option>
-            <option value="radio">Botón de radio</option>
           </select>
-          <i-lucide [img]="ListIcon" class="input-icon lucide-icon"></i-lucide>
         </div>
-        <div
+        <small
           *ngIf="
             campoForm.get('tipo')?.invalid && campoForm.get('tipo')?.touched
           "
@@ -272,20 +277,25 @@
         >
           <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
           {{ getErrorMessage("tipo") }}
-        </div>
+        </small>
       </div>
 
+      <!-- Campo Opciones -->
       <div class="form-field" *ngIf="mostrarCampoOpciones()">
-        <label for="opciones">Opciones</label>
+        <label for="opciones" class="form-label">
+          <i-lucide [img]="ListIcon" class="lucide-icon"></i-lucide>
+          Opciones
+        </label>
         <div class="input-container">
           <textarea
+            pInputTextarea
             id="opciones"
             formControlName="opciones"
             placeholder="Ingrese las opciones separadas por comas (ej: Opción 1, Opción 2, Opción 3)"
             rows="4"
             class="form-textarea"
+            [autoResize]="true"
           ></textarea>
-          <i-lucide [img]="ListIcon" class="input-icon lucide-icon"></i-lucide>
         </div>
         <small
           style="
@@ -300,6 +310,7 @@
         </small>
       </div>
 
+      <!-- Campo Obligatorio -->
       <div class="form-field">
         <div class="checkbox-container">
           <input
@@ -322,48 +333,47 @@
 
   <ng-template pTemplate="footer">
     <div class="modal-actions">
-      <button
-        type="button"
-        class="modal-button cancel"
-        (click)="cerrarModal()"
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModal()"
         [disabled]="guardando"
+        styleClass="p-button-text"
       >
-        <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
-        Cancelar
-      </button>
-      <button
-        type="button"
-        class="modal-button confirm"
-        (click)="guardarCampo()"
+      </p-button>
+      <p-button
+        [label]="modoEdicion ? 'Actualizar' : 'Crear'"
+        icon="pi pi-check"
+        (onClick)="guardarCampo()"
         [disabled]="campoForm.invalid || guardando"
+        [loading]="guardando"
+        styleClass="p-button-primary"
       >
-        <div *ngIf="guardando" class="loading-state">
-          <i-lucide
-            [img]="LoaderIcon"
-            class="loading-spinner lucide-icon"
-          ></i-lucide>
-          {{ modoEdicion ? "Actualizando..." : "Creando..." }}
-        </div>
-        <div
-          *ngIf="!guardando"
-          style="display: flex; align-items: center; gap: 8px"
-        >
-          <i-lucide [img]="SaveIcon" class="lucide-icon"></i-lucide>
-          {{ modoEdicion ? "Actualizar" : "Crear" }} Campo
-        </div>
-      </button>
+      </p-button>
     </div>
   </ng-template>
 </p-dialog>
 
+<!-- Toast para notificaciones -->
+<p-toast
+  position="top-right"
+  [life]="5000"
+  [showTransformOptions]="'translateX(100%)'"
+  [hideTransformOptions]="'translateX(100%)'"
+  [showTransitionOptions]="'300ms ease-out'"
+  [hideTransitionOptions]="'250ms ease-in'"
+  [baseZIndex]="9999"
+>
+</p-toast>
+
 <!-- Modal de confirmación para eliminar -->
 <p-confirmDialog
-  [style]="{ width: '450px' }"
+  [style]="{ width: '450px', maxWidth: '90vw' }"
   [baseZIndex]="10000"
+  [closable]="true"
+  [dismissableMask]="false"
   rejectButtonStyleClass="p-button-text"
   acceptButtonStyleClass="p-button-danger"
 >
 </p-confirmDialog>
-
-<!-- Toast para notificaciones -->
-<p-toast position="top-right" [life]="5000"></p-toast>

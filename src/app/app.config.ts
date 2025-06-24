@@ -13,6 +13,7 @@ import {
 import { tokenInterceptor } from './core/interceptors/token.interceptor';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -20,6 +21,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([tokenInterceptor])),
+    provideAnimationsAsync(),
     providePrimeNG({
       theme: {
         preset: Aura,

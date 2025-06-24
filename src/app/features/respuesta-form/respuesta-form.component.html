@@ -1,0 +1,502 @@
+<!-- respuesta-form.component.html -->
+<div class="respuesta-form-container">
+  <!-- Header mejorado -->
+  <div class="page-header">
+    <div class="page-title">
+      <i-lucide [img]="ClipboardListIcon" class="lucide-icon"></i-lucide>
+      <div>
+        <h1>Respuestas de Formularios</h1>
+        <p class="page-subtitle">
+          Gestiona y revisa las respuestas completadas de los formularios
+        </p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button
+        class="create-button"
+        (click)="abrirModalCrear()"
+        [attr.aria-label]="'Crear nueva respuesta de formulario'"
+        type="button"
+      >
+        <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+        Nueva Respuesta
+      </button>
+    </div>
+  </div>
+
+  <!-- Controles de filtro -->
+  <div class="filter-controls">
+    <div class="search-container">
+      <i-lucide [img]="SearchIcon" class="search-icon lucide-icon"></i-lucide>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por documento o datos..."
+        [(ngModel)]="filtroTexto"
+        (input)="filtrarRespuestas()"
+        [attr.aria-label]="'Buscar respuestas'"
+      />
+    </div>
+    <button
+      class="filter-button"
+      (click)="toggleFiltros()"
+      [attr.aria-label]="'Mostrar filtros avanzados'"
+      type="button"
+    >
+      <i-lucide [img]="FilterIcon" class="lucide-icon"></i-lucide>
+      Filtros
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="loading-container">
+    <i-lucide [img]="LoaderIcon" class="loading-spinner lucide-icon"></i-lucide>
+    <p class="loading-text">Cargando respuestas de formularios...</p>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando">
+    <!-- Estado vacío -->
+    <div
+      *ngIf="respuestasFiltered.length === 0 && !filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide
+        [img]="ClipboardListIcon"
+        class="empty-icon lucide-icon"
+      ></i-lucide>
+      <h3 class="empty-title">No hay respuestas registradas</h3>
+      <p class="empty-description">
+        Comienza creando la primera respuesta de formulario para gestionar los
+        datos completados.
+      </p>
+      <button class="create-button" (click)="abrirModalCrear()" type="button">
+        <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+        Crear Primera Respuesta
+      </button>
+    </div>
+
+    <!-- Sin resultados de búsqueda -->
+    <div
+      *ngIf="respuestasFiltered.length === 0 && filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide [img]="SearchIcon" class="empty-icon lucide-icon"></i-lucide>
+      <h3 class="empty-title">Sin resultados</h3>
+      <p class="empty-description">
+        No se encontraron respuestas que coincidan con "{{ filtroTexto }}".
+      </p>
+      <button class="filter-button" (click)="limpiarFiltros()" type="button">
+        <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+        Limpiar Búsqueda
+      </button>
+    </div>
+
+    <!-- Tabla de respuestas -->
+    <div *ngIf="respuestasFiltered.length > 0" class="table-container">
+      <div class="table-header">
+        <h3 class="table-title">
+          <i-lucide [img]="ListIcon" class="lucide-icon"></i-lucide>
+          Lista de Respuestas
+        </h3>
+        <span class="table-info">
+          {{ respuestasFiltered.length }} de {{ respuestas.length }} respuestas
+        </span>
+      </div>
+
+      <table class="respuestas-table">
+        <thead>
+          <tr>
+            <th class="id-column">ID</th>
+            <th class="fecha-column">Fecha Respuesta</th>
+            <th class="formulario-column">Formulario</th>
+            <th class="documento-column">Documento</th>
+            <th class="completado-column">Completado Por</th>
+            <th class="datos-column">Datos</th>
+            <th class="acciones-column">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="
+              let respuesta of respuestasFiltered
+                | slice
+                  : (paginaActual - 1) * elementosPorPagina
+                  : paginaActual * elementosPorPagina;
+              trackBy: trackByRespuesta
+            "
+          >
+            <td class="id-column">
+              <span class="id-badge">#{{ respuesta.id }}</span>
+            </td>
+            <td class="fecha-column">
+              <div class="fecha-badge">
+                <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
+                {{ formatearFecha(respuesta.fecha_respuesta) }}
+              </div>
+            </td>
+            <td class="formulario-column">
+              <span class="formulario-badge">
+                <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
+                Form #{{ respuesta.formulario }}
+              </span>
+            </td>
+            <td class="documento-column">
+              <div class="documento-badge">
+                <i-lucide [img]="FileIcon" class="lucide-icon"></i-lucide>
+                <span [title]="respuesta.documento">
+                  {{ respuesta.documento | slice : 0 : 8 }}...
+                </span>
+              </div>
+            </td>
+            <td class="completado-column">
+              <div class="completado-badge">
+                <i-lucide [img]="UserIcon" class="lucide-icon"></i-lucide>
+                Usuario {{ respuesta.completado_por }}
+              </div>
+            </td>
+            <td class="datos-column">
+              <span
+                *ngIf="respuesta.datos && respuesta.datos.trim()"
+                class="datos-text"
+                [class.datos-tooltip]="respuesta.datos.length > 50"
+                [title]="respuesta.datos"
+              >
+                {{
+                  respuesta.datos.length > 50
+                    ? (respuesta.datos | slice : 0 : 50) + "..."
+                    : respuesta.datos
+                }}
+              </span>
+              <span
+                *ngIf="!respuesta.datos || !respuesta.datos.trim()"
+                class="text-muted"
+              >
+                Sin datos
+              </span>
+            </td>
+            <td class="acciones-column">
+              <div class="action-buttons">
+                <button
+                  class="action-button view"
+                  (click)="verRespuesta(respuesta)"
+                  [attr.aria-label]="'Ver respuesta #' + respuesta.id"
+                  title="Ver Detalles"
+                  type="button"
+                >
+                  <i-lucide [img]="EyeIcon" class="lucide-icon"></i-lucide>
+                </button>
+                <button
+                  class="action-button edit"
+                  (click)="abrirModalEditar(respuesta)"
+                  [attr.aria-label]="'Editar respuesta #' + respuesta.id"
+                  title="Editar"
+                  type="button"
+                >
+                  <i-lucide [img]="EditIcon" class="lucide-icon"></i-lucide>
+                </button>
+                <button
+                  class="action-button delete"
+                  (click)="confirmarEliminar(respuesta)"
+                  [attr.aria-label]="'Eliminar respuesta #' + respuesta.id"
+                  title="Eliminar"
+                  type="button"
+                >
+                  <i-lucide [img]="TrashIcon" class="lucide-icon"></i-lucide>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <div class="pagination-container" *ngIf="totalPaginas > 1">
+        <div class="pagination-info">
+          Mostrando {{ (paginaActual - 1) * elementosPorPagina + 1 }} -
+          {{
+            Math.min(
+              paginaActual * elementosPorPagina,
+              respuestasFiltered.length
+            )
+          }}
+          de {{ respuestasFiltered.length }} respuestas
+        </div>
+        <div class="pagination-controls">
+          <button
+            class="pagination-button"
+            (click)="cambiarPagina(paginaActual - 1)"
+            [disabled]="paginaActual === 1"
+            type="button"
+          >
+            <i-lucide [img]="ChevronLeftIcon" class="lucide-icon"></i-lucide>
+            Anterior
+          </button>
+          <button
+            class="pagination-button"
+            (click)="cambiarPagina(paginaActual + 1)"
+            [disabled]="paginaActual === totalPaginas"
+            type="button"
+          >
+            Siguiente
+            <i-lucide [img]="ChevronRightIcon" class="lucide-icon"></i-lucide>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar respuesta -->
+<p-dialog
+  [(visible)]="mostrarModal"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="respuesta-dialog"
+  [style]="{ width: '800px', maxWidth: '90vw' }"
+  [header]="modoEdicion ? 'Editar Respuesta' : 'Crear Nueva Respuesta'"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content">
+    <form
+      [formGroup]="respuestaForm"
+      (ngSubmit)="guardarRespuesta()"
+      novalidate
+    >
+      <!-- Campo Formulario -->
+      <div class="form-field">
+        <label for="formulario" class="form-label">
+          <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
+          ID del Formulario *
+        </label>
+        <div class="input-container">
+          <input
+            pInputText
+            id="formulario"
+            type="number"
+            formControlName="formulario"
+            placeholder="Ingrese el ID del formulario"
+            class="form-input"
+            min="1"
+            autocomplete="off"
+          />
+        </div>
+        <small
+          *ngIf="
+            respuestaForm.get('formulario')?.invalid &&
+            respuestaForm.get('formulario')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("formulario") }}
+        </small>
+      </div>
+
+      <!-- Campo Documento -->
+      <div class="form-field">
+        <label for="documento" class="form-label">
+          <i-lucide [img]="FileIcon" class="lucide-icon"></i-lucide>
+          ID del Documento *
+        </label>
+        <div class="input-container">
+          <input
+            pInputText
+            id="documento"
+            type="text"
+            formControlName="documento"
+            placeholder="Ingrese el ID del documento"
+            class="form-input"
+            autocomplete="off"
+          />
+        </div>
+        <small
+          *ngIf="
+            respuestaForm.get('documento')?.invalid &&
+            respuestaForm.get('documento')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("documento") }}
+        </small>
+      </div>
+
+      <!-- Campo Datos -->
+      <div class="form-field">
+        <label for="datos" class="form-label">
+          <i-lucide [img]="DatabaseIcon" class="lucide-icon"></i-lucide>
+          Datos de la Respuesta *
+        </label>
+        <div class="input-container">
+          <textarea
+            pInputTextarea
+            id="datos"
+            formControlName="datos"
+            placeholder="Ingrese los datos de la respuesta (formato JSON)"
+            rows="6"
+            class="form-textarea"
+            [autoResize]="true"
+          ></textarea>
+        </div>
+        <small
+          *ngIf="
+            respuestaForm.get('datos')?.invalid &&
+            respuestaForm.get('datos')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("datos") }}
+        </small>
+        <small
+          style="
+            color: var(--color-text-light);
+            font-size: 0.85rem;
+            margin-top: var(--spacing-xs);
+            display: block;
+          "
+        >
+          Ingrese los datos en formato JSON válido.
+        </small>
+      </div>
+    </form>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModal()"
+        [disabled]="guardando"
+        styleClass="p-button-text"
+      >
+      </p-button>
+      <p-button
+        [label]="modoEdicion ? 'Actualizar' : 'Crear'"
+        icon="pi pi-check"
+        (onClick)="guardarRespuesta()"
+        [disabled]="respuestaForm.invalid || guardando"
+        [loading]="guardando"
+        styleClass="p-button-primary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal para ver detalles -->
+<p-dialog
+  [(visible)]="mostrarModalVer"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="ver-respuesta-dialog"
+  [style]="{ width: '700px', maxWidth: '90vw' }"
+  header="Detalles de la Respuesta"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content" *ngIf="respuestaSeleccionada">
+    <div class="detalle-grid">
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="HashIcon" class="lucide-icon"></i-lucide>
+          ID:
+        </label>
+        <span class="detalle-valor">#{{ respuestaSeleccionada.id }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
+          Fecha de Respuesta:
+        </label>
+        <span class="detalle-valor">
+          {{ formatearFechaCompleta(respuestaSeleccionada.fecha_respuesta) }}
+        </span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
+          Formulario:
+        </label>
+        <span class="detalle-valor"
+          >#{{ respuestaSeleccionada.formulario }}</span
+        >
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="FileIcon" class="lucide-icon"></i-lucide>
+          Documento:
+        </label>
+        <span class="detalle-valor">{{ respuestaSeleccionada.documento }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="UserIcon" class="lucide-icon"></i-lucide>
+          Completado Por:
+        </label>
+        <span class="detalle-valor"
+          >Usuario #{{ respuestaSeleccionada.completado_por }}</span
+        >
+      </div>
+
+      <div class="detalle-item full-width">
+        <label class="detalle-label">
+          <i-lucide [img]="DatabaseIcon" class="lucide-icon"></i-lucide>
+          Datos:
+        </label>
+        <div class="datos-container">
+          <pre class="datos-json">{{ respuestaSeleccionada.datos }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cerrar"
+        icon="pi pi-times"
+        (onClick)="cerrarModalVer()"
+        styleClass="p-button-secondary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast para notificaciones -->
+<p-toast
+  position="top-right"
+  [life]="5000"
+  [showTransformOptions]="'translateX(100%)'"
+  [hideTransformOptions]="'translateX(100%)'"
+  [showTransitionOptions]="'300ms ease-out'"
+  [hideTransitionOptions]="'250ms ease-in'"
+  [baseZIndex]="9999"
+>
+</p-toast>
+
+<!-- Modal de confirmación para eliminar -->
+<p-confirmDialog
+  [style]="{ width: '450px', maxWidth: '90vw' }"
+  [baseZIndex]="10000"
+  [closable]="true"
+  [dismissableMask]="false"
+  rejectButtonStyleClass="p-button-text"
+  acceptButtonStyleClass="p-button-danger"
+>
+</p-confirmDialog>

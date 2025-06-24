@@ -1,20 +1,21 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, type OnInit, type OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterOutlet, Router } from '@angular/router';
 import {
   FormBuilder,
-  FormGroup,
+  type FormGroup,
   Validators,
   ReactiveFormsModule,
   FormsModule,
 } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { DocumentsService } from '../../core/services/documents.service';
 
 // PrimeNG Components
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextarea, Textarea } from 'primeng/inputtextarea';
+import { Textarea } from 'primeng/inputtextarea';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -45,7 +46,7 @@ import {
 
 // Servicios y Modelos
 import { FormulariosService } from '../../core/services/formularios/formularios.service';
-import { Formulario } from '../../models/formulario.model';
+import type { Formulario } from '../../models/formulario.model';
 
 @Component({
   selector: 'app-formularios',
@@ -125,10 +126,32 @@ export class FormulariosComponent implements OnInit, OnDestroy {
     private router: Router,
     private fb: FormBuilder,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private documentsService: DocumentsService
   ) {
     this.creado_por = this.obtenerUsuarioActual();
     this.formularioForm = this.crearFormulario();
+    this.subscriptions.add(
+      this.documentsService.getDocumentTypes().subscribe({
+        next: (tipos) => {
+          this.tiposDocumentos = tipos as { id: number; nombre: string }[];
+          console.log('Tipos de documentos cargados:', this.tiposDocumentos);
+        },
+        error: (error) => {
+          console.error('Error al cargar tipos de documentos:', error);
+          this.mostrarError(
+            'Error al cargar los tipos de documentos. Por favor, intente nuevamente.'
+          );
+        },
+      })
+    );
+  }
+
+  tiposDocumentos: { id: number; nombre: string }[] = [];
+
+  getTipoDocumentoNombre(id: number): string {
+    const tipo = this.tiposDocumentos.find((t) => t.id === id);
+    return tipo ? tipo.nombre : 'Desconocido';
   }
 
   ngOnInit(): void {
@@ -301,7 +324,7 @@ export class FormulariosComponent implements OnInit, OnDestroy {
         ...this.formularioSeleccionado,
         nombre: datosFormulario.nombre.trim(),
         descripcion: datosFormulario.descripcion?.trim() || '',
-        tipo_documento: parseInt(datosFormulario.tipo_documento),
+        tipo_documento: Number.parseInt(datosFormulario.tipo_documento),
       };
 
       const sub = this.formulariosService
@@ -327,7 +350,7 @@ export class FormulariosComponent implements OnInit, OnDestroy {
       const nuevoFormulario: Partial<Formulario> = {
         nombre: datosFormulario.nombre.trim(),
         descripcion: datosFormulario.descripcion?.trim() || '',
-        tipo_documento: parseInt(datosFormulario.tipo_documento),
+        tipo_documento: Number.parseInt(datosFormulario.tipo_documento),
         creado_por: this.creado_por,
         campos: [],
       };

@@ -1,6 +1,37 @@
 /* formularios.component.css */
 
-/* Variables CSS personalizadas */
+/* Variables CSS personalizadas - DEFINIDAS PRIMERO */
+:host {
+    --color-primary: #3b82f6;
+    --color-primary-dark: #2563eb;
+    --color-primary-rgb: 59, 130, 246;
+    --color-secondary: #6b7280;
+    --color-success: #10b981;
+    --color-success-dark: #059669;
+    --color-success-rgb: 16, 185, 129;
+    --color-warning: #f59e0b;
+    --color-warning-dark: #d97706;
+    --color-warning-rgb: 245, 158, 11;
+    --color-error: #ef4444;
+    --color-error-dark: #dc2626;
+    --color-error-rgb: 239, 68, 68;
+    --color-info: #06b6d4;
+    --color-info-dark: #0891b2;
+    --color-info-rgb: 6, 182, 212;
+    --color-background: #ffffff;
+    --color-surface: #f8fafc;
+    --color-hover: #f1f5f9;
+    --color-border: #e2e8f0;
+    --color-text: #1e293b;
+    --color-text-light: #64748b;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1rem;
+    --spacing-xl: 1.5rem;
+    --border-radius-full: 9999px;
+}
+
 .formularios-container {
     --table-border-radius: 12px;
     --card-border-radius: 16px;
@@ -87,7 +118,7 @@
 }
 
 .create-button::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
@@ -301,7 +332,7 @@
 
 .fecha-column {
     width: 140px;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 0.85rem;
 }
 
@@ -320,6 +351,17 @@
 }
 
 /* Badges y etiquetas */
+.id-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    border-radius: var(--border-radius-full);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+}
+
 .tipo-badge {
     display: inline-flex;
     align-items: center;
@@ -492,55 +534,229 @@
     max-width: 400px;
 }
 
-/* Paginación */
-.pagination-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* ESTILOS ESPECÍFICOS PARA PRIMENG MODAL */
+:host ::ng-deep .p-dialog {
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-header {
+    background: var(--gradient-primary);
+    color: white;
     padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: none;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-header-icon {
+    color: white;
+    width: 2rem;
+    height: 2rem;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-header-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+    padding: 0;
+    background: var(--color-surface);
+}
+
+:host ::ng-deep .p-dialog .p-dialog-footer {
+    padding: 0;
     background: var(--color-background);
     border-top: 1px solid var(--color-border);
 }
 
-.pagination-info {
+/* Modal content styles */
+.modal-content {
+    padding: var(--spacing-xl);
+}
+
+.form-field {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+.input-container {
+    position: relative;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-lg);
+    padding-right: calc(var(--spacing-lg) + 32px);
+    border: 2px solid var(--color-border);
+    border-radius: var(--button-border-radius);
+    font-size: 1rem;
+    background: var(--color-background);
+    color: var(--color-text);
+    transition: var(--transition);
+    outline: none;
+    font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.form-input.error,
+.form-textarea.error {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.input-icon {
+    position: absolute;
+    right: var(--spacing-md);
+    top: var(--spacing-md);
+    width: 20px;
+    height: 20px;
     color: var(--color-text-light);
-    font-size: 0.9rem;
-    font-weight: 500;
+    pointer-events: none;
 }
 
-.pagination-controls {
-    display: flex;
-    gap: var(--spacing-sm);
-}
-
-.pagination-button {
+.error-message {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-    border-radius: var(--button-border-radius);
-    font-size: 0.9rem;
+    margin-top: var(--spacing-sm);
+    color: var(--color-error);
+    font-size: 0.85rem;
     font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
 }
 
-.pagination-button:hover:not(:disabled) {
-    background: var(--color-hover);
-    border-color: var(--color-primary);
-}
-
-.pagination-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pagination-button .lucide-icon {
+.error-message .lucide-icon {
     width: 16px;
     height: 16px;
+}
+
+/* Modal actions */
+.modal-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.modal-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    border-radius: var(--button-border-radius);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 120px;
+    justify-content: center;
+}
+
+.modal-button.cancel {
+    background: var(--color-background);
+    color: var(--color-text);
+    border: 2px solid var(--color-border);
+}
+
+.modal-button.cancel:hover {
+    background: var(--color-hover);
+    border-color: var(--color-text-light);
+}
+
+.modal-button.confirm {
+    background: var(--gradient-primary);
+    color: white;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.modal-button.confirm:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(var(--color-primary-rgb), 0.4);
+}
+
+.modal-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.modal-button .lucide-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.loading-state {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.loading-state .loading-spinner {
+    width: 18px;
+    height: 18px;
+}
+
+/* Toast styles */
+:host ::ng-deep .p-toast {
+    z-index: 9999;
+}
+
+:host ::ng-deep .p-toast .p-toast-message {
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--color-border);
+}
+
+/* Confirm dialog styles */
+:host ::ng-deep .p-confirm-dialog {
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--color-border);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-dialog-header {
+    background: var(--gradient-background);
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 16px 16px 0 0;
+    padding: var(--spacing-lg);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-dialog-content {
+    padding: var(--spacing-xl);
+    background: var(--color-surface);
+}
+
+:host ::ng-deep .p-confirm-dialog .p-dialog-footer {
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border);
+    border-radius: 0 0 16px 16px;
+    padding: var(--spacing-lg);
+    gap: var(--spacing-md);
 }
 
 /* Responsive Design */
@@ -600,9 +816,18 @@
         min-width: 800px;
     }
 
-    .pagination-container {
+    :host ::ng-deep .p-dialog {
+        width: calc(100vw - 2rem) !important;
+        max-width: none !important;
+        margin: var(--spacing-md);
+    }
+
+    .modal-actions {
         flex-direction: column;
-        gap: var(--spacing-md);
+    }
+
+    .modal-button {
+        width: 100%;
     }
 }
 
@@ -625,43 +850,12 @@
     }
 }
 
-/* Mejoras de accesibilidad */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-@media (prefers-contrast: high) {
-
-    .formularios-table,
-    .table-container,
-    .action-button {
-        border-width: 2px;
-    }
-}
-
 /* Estados de focus para accesibilidad */
 .action-button:focus,
 .create-button:focus,
 .search-input:focus {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-}
-
-/* Soporte para modo oscuro */
-@media (prefers-color-scheme: dark) {
-
-    .table-container,
-    .page-header {
-        background: var(--color-surface-dark);
-    }
-
-    .formularios-table tbody tr:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
 }
 
 /* Animaciones de entrada */
@@ -703,4 +897,5 @@
 }
 
 .formularios-table tbody tr:nth-child(5) {
-    animation-delay: 0.5s; }
+    animation-delay: 0.5s;
+}

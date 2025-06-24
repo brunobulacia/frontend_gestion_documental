@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, type OnInit, type OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import {
   FormBuilder,
-  FormGroup,
+  type FormGroup,
   Validators,
   ReactiveFormsModule,
   FormsModule,
@@ -49,7 +49,7 @@ import {
 
 // Servicios y Modelos
 import { CamposFormularioService } from '../../core/services/formularios/campos-formulario.service';
-import { CamposFormulario } from '../../models/campos-formulario.model';
+import type { CamposFormulario } from '../../models/campos-formulario.model';
 
 @Component({
   selector: 'app-campos-formulario',
@@ -100,7 +100,7 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
   // Propiedades del componente
   camposFormulario: CamposFormulario[] = [];
   camposFiltered: CamposFormulario[] = [];
-  formId: number = 1;
+  formId = 1;
   cargando = true;
   guardando = false;
 
@@ -289,7 +289,7 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
       };
 
       const sub = this.camposFormularioService
-        .updateCamposFormulario(campoActualizado, this.campoSeleccionado.id!)
+        .updateCamposFormulario(campoActualizado, this.campoSeleccionado.id)
         .subscribe({
           next: (campoGuardado) => {
             this.mostrarExito('Campo actualizado correctamente');
@@ -348,7 +348,7 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
       acceptLabel: 'Sí, Eliminar',
       rejectLabel: 'Cancelar',
       accept: () => {
-        this.eliminarCampo(campo.id!);
+        this.eliminarCampo(campo.id);
       },
     });
   }
@@ -380,7 +380,7 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
    */
   mostrarCampoOpciones(): boolean {
     const tipo = this.campoForm.get('tipo')?.value;
-    return tipo === 'select' || tipo === 'radio';
+    return tipo === 'select';
   }
 
   /**
@@ -389,14 +389,12 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
   getTipoBadgeClass(tipo: string): string {
     switch (tipo.toLowerCase()) {
       case 'text':
-      case 'textarea':
         return 'text';
       case 'number':
         return 'number';
-      case 'email':
-        return 'email';
+      case 'date':
+        return 'email'; // Reutilizamos el estilo email para date
       case 'select':
-      case 'radio':
         return 'select';
       case 'checkbox':
         return 'checkbox';
@@ -414,18 +412,12 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
         return this.TypeIcon;
       case 'number':
         return this.HashIcon;
-      case 'email':
-        return this.AtSignIcon;
       case 'date':
         return this.CalendarIcon;
       case 'select':
         return this.ListIcon;
       case 'checkbox':
         return this.CheckSquareIcon;
-      case 'textarea':
-        return this.AlignLeftIcon;
-      case 'radio':
-        return this.RadioIcon;
       default:
         return this.TypeIcon;
     }
@@ -449,7 +441,9 @@ export class CamposFormularioComponent implements OnInit, OnDestroy {
 
     if (errors['minlength']) {
       const requiredLength = errors['minlength'].requiredLength;
-      return `Mínimo ${requiredLength} caracteres`;
+      return `M  {
+      const requiredLength = errors["minlength"].requiredLength
+      return \`Mínimo ${requiredLength} caracteres`;
     }
 
     if (errors['maxlength']) {

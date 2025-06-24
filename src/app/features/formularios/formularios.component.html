@@ -16,6 +16,7 @@
         class="create-button"
         (click)="abrirModalCrear()"
         [attr.aria-label]="'Crear nuevo formulario'"
+        type="button"
       >
         <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
         Nuevo Formulario
@@ -40,6 +41,7 @@
       class="filter-button"
       (click)="toggleFiltros()"
       [attr.aria-label]="'Mostrar filtros avanzados'"
+      type="button"
     >
       <i-lucide [img]="FilterIcon" class="lucide-icon"></i-lucide>
       Filtros
@@ -65,7 +67,7 @@
         Comienza creando tu primer formulario para gestionar la información de
         tus documentos.
       </p>
-      <button class="create-button" (click)="abrirModalCrear()">
+      <button class="create-button" (click)="abrirModalCrear()" type="button">
         <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
         Crear Primer Formulario
       </button>
@@ -81,7 +83,7 @@
       <p class="empty-description">
         No se encontraron formularios que coincidan con "{{ filtroTexto }}".
       </p>
-      <button class="filter-button" (click)="limpiarFiltros()">
+      <button class="filter-button" (click)="limpiarFiltros()" type="button">
         <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
         Limpiar Búsqueda
       </button>
@@ -115,7 +117,10 @@
         <tbody>
           <tr
             *ngFor="
-              let formulario of formulariosFiltered;
+              let formulario of formulariosFiltered
+                | slice
+                  : (paginaActual - 1) * elementosPorPagina
+                  : paginaActual * elementosPorPagina;
               trackBy: trackByFormulario
             "
           >
@@ -127,8 +132,11 @@
             </td>
             <td class="descripcion-column">
               <span [title]="formulario.descripcion">
-                {{ formulario.descripcion | slice : 0 : 100 }}
-                <span *ngIf="formulario.descripcion.length > 100">...</span>
+                {{
+                  formulario.descripcion.length > 100
+                    ? (formulario.descripcion | slice : 0 : 100) + "..."
+                    : formulario.descripcion
+                }}
               </span>
             </td>
             <td class="fecha-column">
@@ -140,7 +148,7 @@
             <td class="tipo-column">
               <span class="tipo-badge">
                 <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
-                Tipo {{ formulario.tipo_documento }}
+                {{ getTipoDocumentoNombre(formulario.tipo_documento) }}
               </span>
             </td>
             <td class="creador-column">
@@ -153,11 +161,12 @@
               <div class="action-buttons">
                 <button
                   class="action-button view"
-                  (click)="verCamposFormulario(formulario.id!)"
+                  (click)="verCamposFormulario(formulario.id)"
                   [attr.aria-label]="
                     'Ver campos del formulario ' + formulario.nombre
                   "
                   title="Ver Campos"
+                  type="button"
                 >
                   <i-lucide [img]="EyeIcon" class="lucide-icon"></i-lucide>
                 </button>
@@ -166,6 +175,7 @@
                   (click)="abrirModalEditar(formulario)"
                   [attr.aria-label]="'Editar formulario ' + formulario.nombre"
                   title="Editar"
+                  type="button"
                 >
                   <i-lucide [img]="EditIcon" class="lucide-icon"></i-lucide>
                 </button>
@@ -174,6 +184,7 @@
                   (click)="confirmarEliminar(formulario)"
                   [attr.aria-label]="'Eliminar formulario ' + formulario.nombre"
                   title="Eliminar"
+                  type="button"
                 >
                   <i-lucide [img]="TrashIcon" class="lucide-icon"></i-lucide>
                 </button>
@@ -183,18 +194,24 @@
         </tbody>
       </table>
 
-      <!-- Paginación (si es necesaria) -->
+      <!-- Paginación -->
       <div class="pagination-container" *ngIf="totalPaginas > 1">
         <div class="pagination-info">
           Mostrando {{ (paginaActual - 1) * elementosPorPagina + 1 }} -
-          {{ Math.min(paginaActual * elementosPorPagina, formularios.length) }}
-          de {{ formularios.length }} formularios
+          {{
+            Math.min(
+              paginaActual * elementosPorPagina,
+              formulariosFiltered.length
+            )
+          }}
+          de {{ formulariosFiltered.length }} formularios
         </div>
         <div class="pagination-controls">
           <button
             class="pagination-button"
             (click)="cambiarPagina(paginaActual - 1)"
             [disabled]="paginaActual === 1"
+            type="button"
           >
             <i-lucide [img]="ChevronLeftIcon" class="lucide-icon"></i-lucide>
             Anterior
@@ -203,6 +220,7 @@
             class="pagination-button"
             (click)="cambiarPagina(paginaActual + 1)"
             [disabled]="paginaActual === totalPaginas"
+            type="button"
           >
             Siguiente
             <i-lucide [img]="ChevronRightIcon" class="lucide-icon"></i-lucide>
@@ -220,9 +238,12 @@
   [closable]="true"
   [draggable]="false"
   [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
   styleClass="formulario-dialog"
   [style]="{ width: '600px', maxWidth: '90vw' }"
   [header]="modoEdicion ? 'Editar Formulario' : 'Crear Nuevo Formulario'"
+  [baseZIndex]="10000"
 >
   <div class="modal-content">
     <form
@@ -230,26 +251,28 @@
       (ngSubmit)="guardarFormulario()"
       novalidate
     >
+      <!-- Campo Nombre -->
       <div class="form-field">
-        <label for="nombre">Nombre del Formulario *</label>
+        <label for="nombre" class="form-label">
+          <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
+          Nombre del Formulario *
+        </label>
         <div class="input-container">
           <input
+            pInputText
             id="nombre"
             type="text"
             formControlName="nombre"
             placeholder="Ingrese el nombre del formulario"
-            [class.error]="
+            [class.ng-invalid]="
               formularioForm.get('nombre')?.invalid &&
               formularioForm.get('nombre')?.touched
             "
             class="form-input"
+            autocomplete="off"
           />
-          <i-lucide
-            [img]="FileTextIcon"
-            class="input-icon lucide-icon"
-          ></i-lucide>
         </div>
-        <div
+        <small
           *ngIf="
             formularioForm.get('nombre')?.invalid &&
             formularioForm.get('nombre')?.touched
@@ -258,44 +281,53 @@
         >
           <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
           {{ getErrorMessage("nombre") }}
-        </div>
+        </small>
       </div>
 
+      <!-- Campo Descripción -->
       <div class="form-field">
-        <label for="descripcion">Descripción</label>
+        <label for="descripcion" class="form-label">
+          <i-lucide [img]="AlignLeftIcon" class="lucide-icon"></i-lucide>
+          Descripción
+        </label>
         <div class="input-container">
           <textarea
+            pInputTextarea
             id="descripcion"
             formControlName="descripcion"
             placeholder="Descripción del formulario (opcional)"
             rows="4"
             class="form-textarea"
+            [autoResize]="true"
           ></textarea>
-          <i-lucide
-            [img]="AlignLeftIcon"
-            class="input-icon lucide-icon"
-          ></i-lucide>
         </div>
       </div>
 
+      <!-- Campo Tipo de Documento -->
       <div class="form-field">
-        <label for="tipo_documento">Tipo de Documento *</label>
+        <label for="tipo_documento" class="form-label">
+          <i-lucide [img]="TagIcon" class="lucide-icon"></i-lucide>
+          Tipo de Documento *
+        </label>
         <div class="input-container">
-          <input
+          <select
             id="tipo_documento"
-            type="number"
             formControlName="tipo_documento"
-            placeholder="ID del tipo de documento"
-            [class.error]="
+            class="form-input"
+            [class.ng-invalid]="
               formularioForm.get('tipo_documento')?.invalid &&
               formularioForm.get('tipo_documento')?.touched
             "
-            class="form-input"
-            min="1"
-          />
-          <i-lucide [img]="TagIcon" class="input-icon lucide-icon"></i-lucide>
+          >
+            <option value="" disabled selected>
+              Seleccione un tipo de documento
+            </option>
+            <option *ngFor="let tipo of tiposDocumentos" [value]="tipo.id">
+              {{ tipo.nombre }}
+            </option>
+          </select>
         </div>
-        <div
+        <!-- <small
           *ngIf="
             formularioForm.get('tipo_documento')?.invalid &&
             formularioForm.get('tipo_documento')?.touched
@@ -304,57 +336,56 @@
         >
           <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
           {{ getErrorMessage("tipo_documento") }}
-        </div>
+        </small> -->
       </div>
     </form>
   </div>
 
   <ng-template pTemplate="footer">
     <div class="modal-actions">
-      <button
-        type="button"
-        class="modal-button cancel"
-        (click)="cerrarModal()"
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModal()"
         [disabled]="guardando"
+        styleClass="p-button-text"
       >
-        <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
-        Cancelar
-      </button>
-      <button
-        type="button"
-        class="modal-button confirm"
-        (click)="guardarFormulario()"
+      </p-button>
+      <p-button
+        [label]="modoEdicion ? 'Actualizar' : 'Crear'"
+        icon="pi pi-check"
+        (onClick)="guardarFormulario()"
         [disabled]="formularioForm.invalid || guardando"
+        [loading]="guardando"
+        styleClass="p-button-primary"
       >
-        <div *ngIf="guardando" class="loading-state">
-          <i-lucide
-            [img]="LoaderIcon"
-            class="loading-spinner lucide-icon"
-          ></i-lucide>
-          {{ modoEdicion ? "Actualizando..." : "Creando..." }}
-        </div>
-        <div
-          *ngIf="!guardando"
-          style="display: flex; align-items: center; gap: 8px"
-        >
-          <i-lucide [img]="SaveIcon" class="lucide-icon"></i-lucide>
-          {{ modoEdicion ? "Actualizar" : "Crear" }} Formulario
-        </div>
-      </button>
+      </p-button>
     </div>
   </ng-template>
 </p-dialog>
 
+<!-- Toast para notificaciones -->
+<p-toast
+  position="top-right"
+  [life]="5000"
+  [showTransformOptions]="'translateX(100%)'"
+  [hideTransformOptions]="'translateX(100%)'"
+  [showTransitionOptions]="'300ms ease-out'"
+  [hideTransitionOptions]="'250ms ease-in'"
+  [baseZIndex]="9999"
+>
+</p-toast>
+
 <!-- Modal de confirmación para eliminar -->
 <p-confirmDialog
-  [style]="{ width: '450px' }"
+  [style]="{ width: '450px', maxWidth: '90vw' }"
   [baseZIndex]="10000"
+  [closable]="true"
+  [dismissableMask]="false"
   rejectButtonStyleClass="p-button-text"
   acceptButtonStyleClass="p-button-danger"
 >
 </p-confirmDialog>
-
-<!-- Toast para notificaciones -->
-<p-toast position="top-right" [life]="5000"></p-toast>
 
 <router-outlet></router-outlet>
