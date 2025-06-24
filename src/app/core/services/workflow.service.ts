@@ -106,6 +106,7 @@ export class WorkflowService {
     }
     flujoCompleto = this.fusionarElementosRepetidos(flujoCompleto);
     flujoCompleto = this.eliminarWaypoints(flujoCompleto);
+    flujoCompleto.flujo.tipo_documento_id = flujoCompleto.flujo.tipo_documento_id.id;
     console.log('Flujo a enviar:')
     console.log(flujoCompleto);
     return this.http.post<FlujoTrabajoCompleto>(`${this.WORKFLOWS_URL}/flujos/actualizar/`, flujoCompleto);
