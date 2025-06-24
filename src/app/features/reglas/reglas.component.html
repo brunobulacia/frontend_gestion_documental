@@ -1,0 +1,634 @@
+<!-- reglas.component.html -->
+<div class="reglas-container">
+  <!-- Header mejorado -->
+  <div class="page-header">
+    <div class="page-title">
+      <i-lucide [img]="SettingsIcon" class="lucide-icon"></i-lucide>
+      <div>
+        <h1>Reglas Automáticas</h1>
+        <p class="page-subtitle">
+          Configura reglas para automatizar acciones en el sistema
+        </p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button
+        class="create-button"
+        (click)="abrirModalCrear()"
+        [attr.aria-label]="'Crear nueva regla automática'"
+        type="button"
+      >
+        <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+        Nueva Regla
+      </button>
+    </div>
+  </div>
+
+  <!-- Controles de filtro -->
+  <div class="filter-controls">
+    <div class="search-container">
+      <i-lucide [img]="SearchIcon" class="search-icon lucide-icon"></i-lucide>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar reglas por nombre, evento o acción..."
+        [(ngModel)]="filtroTexto"
+        (input)="filtrarReglas()"
+        [attr.aria-label]="'Buscar reglas'"
+      />
+    </div>
+    <button
+      class="filter-button"
+      (click)="toggleFiltros()"
+      [attr.aria-label]="'Mostrar filtros avanzados'"
+      type="button"
+    >
+      <i-lucide [img]="FilterIcon" class="lucide-icon"></i-lucide>
+      Filtros
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="loading-container">
+    <i-lucide [img]="LoaderIcon" class="loading-spinner lucide-icon"></i-lucide>
+    <p class="loading-text">Cargando reglas automáticas...</p>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando">
+    <!-- Estado vacío -->
+    <div
+      *ngIf="reglasFiltered.length === 0 && !filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide [img]="SettingsIcon" class="empty-icon lucide-icon"></i-lucide>
+      <h3 class="empty-title">No hay reglas configuradas</h3>
+      <p class="empty-description">
+        Comienza creando tu primera regla automática para automatizar procesos
+        en el sistema.
+      </p>
+      <button class="create-button" (click)="abrirModalCrear()" type="button">
+        <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+        Crear Primera Regla
+      </button>
+    </div>
+
+    <!-- Sin resultados de búsqueda -->
+    <div *ngIf="reglasFiltered.length === 0 && filtroTexto" class="empty-state">
+      <i-lucide [img]="SearchIcon" class="empty-icon lucide-icon"></i-lucide>
+      <h3 class="empty-title">Sin resultados</h3>
+      <p class="empty-description">
+        No se encontraron reglas que coincidan con "{{ filtroTexto }}".
+      </p>
+      <button class="filter-button" (click)="limpiarFiltros()" type="button">
+        <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+        Limpiar Búsqueda
+      </button>
+    </div>
+
+    <!-- Tabla de reglas -->
+    <div *ngIf="reglasFiltered.length > 0" class="table-container">
+      <div class="table-header">
+        <h3 class="table-title">
+          <i-lucide [img]="ListIcon" class="lucide-icon"></i-lucide>
+          Lista de Reglas
+        </h3>
+        <span class="table-info">
+          {{ reglasFiltered.length }} de {{ reglas.length }} reglas
+        </span>
+      </div>
+
+      <table class="reglas-table">
+        <thead>
+          <tr>
+            <th class="id-column">ID</th>
+            <th class="nombre-column">Nombre</th>
+            <th class="evento-column">Evento</th>
+            <th class="accion-column">Acción</th>
+            <th class="activa-column">Estado</th>
+            <th class="fecha-column">Fecha Creación</th>
+            <th class="acciones-column">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="
+              let regla of reglasFiltered
+                | slice
+                  : (paginaActual - 1) * elementosPorPagina
+                  : paginaActual * elementosPorPagina;
+              trackBy: trackByRegla
+            "
+          >
+            <td class="id-column">
+              <span class="id-badge">#{{ regla.id }}</span>
+            </td>
+            <td class="nombre-column">
+              <strong>{{ regla.nombre }}</strong>
+            </td>
+            <td class="evento-column">
+              <span
+                [class]="'evento-badge ' + getEventoBadgeClass(regla.evento)"
+              >
+                <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+                {{ getEventoTexto(regla.evento) }}
+              </span>
+            </td>
+            <td class="accion-column">
+              <span
+                [class]="'accion-badge ' + getAccionBadgeClass(regla.accion)"
+              >
+                <i-lucide [img]="PlayIcon" class="lucide-icon"></i-lucide>
+                {{ getAccionTexto(regla.accion) }}
+              </span>
+            </td>
+            <td class="activa-column">
+              <div
+                [class]="
+                  'activa-badge ' + (regla.activa ? 'activa' : 'inactiva')
+                "
+              >
+                <i-lucide
+                  [img]="regla.activa ? CheckCircleIcon : PauseIcon"
+                  class="lucide-icon"
+                ></i-lucide>
+                {{ regla.activa ? "Activa" : "Inactiva" }}
+              </div>
+            </td>
+            <td class="fecha-column">
+              <div class="fecha-badge">
+                <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
+                {{ formatearFecha(regla.creada_en) }}
+              </div>
+            </td>
+            <td class="acciones-column">
+              <div class="action-buttons">
+                <button
+                  class="action-button view"
+                  (click)="verRegla(regla)"
+                  [attr.aria-label]="'Ver regla ' + regla.nombre"
+                  title="Ver Detalles"
+                  type="button"
+                >
+                  <i-lucide [img]="EyeIcon" class="lucide-icon"></i-lucide>
+                </button>
+                <button
+                  class="action-button edit"
+                  (click)="abrirModalEditar(regla)"
+                  [attr.aria-label]="'Editar regla ' + regla.nombre"
+                  title="Editar"
+                  type="button"
+                >
+                  <i-lucide [img]="EditIcon" class="lucide-icon"></i-lucide>
+                </button>
+                <button
+                  class="action-button delete"
+                  (click)="confirmarEliminar(regla)"
+                  [attr.aria-label]="'Eliminar regla ' + regla.nombre"
+                  title="Eliminar"
+                  type="button"
+                >
+                  <i-lucide [img]="TrashIcon" class="lucide-icon"></i-lucide>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <div class="pagination-container" *ngIf="totalPaginas > 1">
+        <div class="pagination-info">
+          Mostrando {{ (paginaActual - 1) * elementosPorPagina + 1 }} -
+          {{
+            Math.min(paginaActual * elementosPorPagina, reglasFiltered.length)
+          }}
+          de {{ reglasFiltered.length }} reglas
+        </div>
+        <div class="pagination-controls">
+          <button
+            class="pagination-button"
+            (click)="cambiarPagina(paginaActual - 1)"
+            [disabled]="paginaActual === 1"
+            type="button"
+          >
+            <i-lucide [img]="ChevronLeftIcon" class="lucide-icon"></i-lucide>
+            Anterior
+          </button>
+          <button
+            class="pagination-button"
+            (click)="cambiarPagina(paginaActual + 1)"
+            [disabled]="paginaActual === totalPaginas"
+            type="button"
+          >
+            Siguiente
+            <i-lucide [img]="ChevronRightIcon" class="lucide-icon"></i-lucide>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar regla -->
+<p-dialog
+  [(visible)]="mostrarModal"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="regla-dialog"
+  [style]="{ width: '900px', maxWidth: '95vw' }"
+  [header]="modoEdicion ? 'Editar Regla' : 'Crear Nueva Regla'"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content">
+    <form [formGroup]="reglaForm" (ngSubmit)="guardarRegla()" novalidate>
+      <!-- Campo Nombre -->
+      <div class="form-field">
+        <label for="nombre" class="form-label">
+          <i-lucide [img]="TypeIcon" class="lucide-icon"></i-lucide>
+          Nombre de la Regla *
+        </label>
+        <div class="input-container">
+          <input
+            pInputText
+            id="nombre"
+            type="text"
+            formControlName="nombre"
+            placeholder="Ingrese el nombre de la regla"
+            class="form-input"
+            autocomplete="off"
+          />
+        </div>
+        <small
+          *ngIf="
+            reglaForm.get('nombre')?.invalid && reglaForm.get('nombre')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("nombre") }}
+        </small>
+      </div>
+
+      <!-- Campo Evento -->
+      <div class="form-field">
+        <label for="evento" class="form-label">
+          <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+          Evento Disparador *
+        </label>
+        <div class="input-container">
+          <p-dropdown
+            [options]="eventosOpciones"
+            formControlName="evento"
+            placeholder="Seleccione un evento"
+            styleClass="form-select"
+            [showClear]="true"
+          ></p-dropdown>
+        </div>
+        <small
+          *ngIf="
+            reglaForm.get('evento')?.invalid && reglaForm.get('evento')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("evento") }}
+        </small>
+      </div>
+
+      <!-- Campo Acción -->
+      <div class="form-field">
+        <label for="accion" class="form-label">
+          <i-lucide [img]="PlayIcon" class="lucide-icon"></i-lucide>
+          Acción a Ejecutar *
+        </label>
+        <div class="input-container">
+          <p-dropdown
+            [options]="accionesOpciones"
+            formControlName="accion"
+            placeholder="Seleccione una acción"
+            styleClass="form-select"
+            [showClear]="true"
+          ></p-dropdown>
+        </div>
+        <small
+          *ngIf="
+            reglaForm.get('accion')?.invalid && reglaForm.get('accion')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("accion") }}
+        </small>
+      </div>
+
+      <!-- Editor de Condiciones -->
+      <div class="form-field">
+        <label class="form-label">
+          <i-lucide [img]="CodeIcon" class="lucide-icon"></i-lucide>
+          Condiciones *
+        </label>
+        <div class="json-editor">
+          <div class="json-editor-header">
+            <span class="json-editor-title"
+              >Condiciones para activar la regla</span
+            >
+            <button
+              type="button"
+              class="add-pair-button"
+              (click)="agregarCondicionPair()"
+            >
+              <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+              Agregar
+            </button>
+          </div>
+          <div class="json-pairs">
+            <div
+              *ngFor="
+                let pair of condicionPairs;
+                let i = index;
+                trackBy: trackByIndex
+              "
+              class="json-pair"
+            >
+              <input
+                type="text"
+                class="json-pair-input key"
+                placeholder="Clave"
+                [(ngModel)]="pair.key"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <span class="json-separator">:</span>
+              <input
+                type="text"
+                class="json-pair-input value"
+                placeholder="Valor"
+                [(ngModel)]="pair.value"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <button
+                type="button"
+                class="remove-pair-button"
+                (click)="eliminarCondicionPair(i)"
+                [disabled]="condicionPairs.length === 1"
+              >
+                <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+              </button>
+            </div>
+          </div>
+        </div>
+        <small
+          style="
+            color: var(--color-text-light);
+            font-size: 0.85rem;
+            margin-top: var(--spacing-xs);
+            display: block;
+          "
+        >
+          Ejemplo: tipo_documento = "contrato", estado = "pendiente"
+        </small>
+      </div>
+
+      <!-- Editor de Parámetros de Acción -->
+      <div class="form-field">
+        <label class="form-label">
+          <i-lucide [img]="DatabaseIcon" class="lucide-icon"></i-lucide>
+          Parámetros de Acción *
+        </label>
+        <div class="json-editor">
+          <div class="json-editor-header">
+            <span class="json-editor-title">Parámetros para la acción</span>
+            <button
+              type="button"
+              class="add-pair-button"
+              (click)="agregarParametrosPair()"
+            >
+              <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+              Agregar
+            </button>
+          </div>
+          <div class="json-pairs">
+            <div
+              *ngFor="
+                let pair of parametrosPairs;
+                let i = index;
+                trackBy: trackByIndex
+              "
+              class="json-pair"
+            >
+              <input
+                type="text"
+                class="json-pair-input key"
+                placeholder="Clave"
+                [(ngModel)]="pair.key"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <span class="json-separator">:</span>
+              <input
+                type="text"
+                class="json-pair-input value"
+                placeholder="Valor"
+                [(ngModel)]="pair.value"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <button
+                type="button"
+                class="remove-pair-button"
+                (click)="eliminarParametrosPair(i)"
+                [disabled]="parametrosPairs.length === 1"
+              >
+                <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+              </button>
+            </div>
+          </div>
+        </div>
+        <small
+          style="
+            color: var(--color-text-light);
+            font-size: 0.85rem;
+            margin-top: var(--spacing-xs);
+            display: block;
+          "
+        >
+          Ejemplo: nuevo_estado = "validado", mensaje = "Documento procesado"
+        </small>
+      </div>
+
+      <!-- Campo Activa -->
+      <div class="form-field">
+        <div class="checkbox-container">
+          <input id="activa" type="checkbox" formControlName="activa" />
+          <label for="activa" class="checkbox-label">
+            <i-lucide
+              [img]="CheckCircleIcon"
+              class="lucide-icon"
+              style="width: 16px; height: 16px; margin-right: 8px"
+            ></i-lucide>
+            Regla activa (se ejecutará automáticamente)
+          </label>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModal()"
+        [disabled]="guardando"
+        styleClass="p-button-text"
+      >
+      </p-button>
+      <p-button
+        [label]="modoEdicion ? 'Actualizar' : 'Crear'"
+        icon="pi pi-check"
+        (onClick)="guardarRegla()"
+        [disabled]="reglaForm.invalid || guardando"
+        [loading]="guardando"
+        styleClass="p-button-primary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal para ver detalles -->
+<p-dialog
+  [(visible)]="mostrarModalVer"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="ver-regla-dialog"
+  [style]="{ width: '800px', maxWidth: '90vw' }"
+  header="Detalles de la Regla"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content" *ngIf="reglaSeleccionada">
+    <div class="detalle-grid">
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="HashIcon" class="lucide-icon"></i-lucide>
+          ID:
+        </label>
+        <span class="detalle-valor">#{{ reglaSeleccionada.id }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="TypeIcon" class="lucide-icon"></i-lucide>
+          Nombre:
+        </label>
+        <span class="detalle-valor">{{ reglaSeleccionada.nombre }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+          Evento:
+        </label>
+        <span class="detalle-valor">{{
+          getEventoTexto(reglaSeleccionada.evento)
+        }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="PlayIcon" class="lucide-icon"></i-lucide>
+          Acción:
+        </label>
+        <span class="detalle-valor">{{
+          getAccionTexto(reglaSeleccionada.accion)
+        }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="CheckCircleIcon" class="lucide-icon"></i-lucide>
+          Estado:
+        </label>
+        <span class="detalle-valor">{{
+          reglaSeleccionada.activa ? "Activa" : "Inactiva"
+        }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
+          Fecha de Creación:
+        </label>
+        <span class="detalle-valor">
+          {{ formatearFechaCompleta(reglaSeleccionada.creada_en) }}
+        </span>
+      </div>
+
+      <div class="detalle-item full-width">
+        <label class="detalle-label">
+          <i-lucide [img]="CodeIcon" class="lucide-icon"></i-lucide>
+          Condiciones:
+        </label>
+        <div class="json-container">
+          <pre class="json-display">{{
+            formatearJSON(reglaSeleccionada.condicion)
+          }}</pre>
+        </div>
+      </div>
+
+      <div class="detalle-item full-width">
+        <label class="detalle-label">
+          <i-lucide [img]="DatabaseIcon" class="lucide-icon"></i-lucide>
+          Parámetros de Acción:
+        </label>
+        <div class="json-container">
+          <pre class="json-display">{{
+            formatearJSON(reglaSeleccionada.parametros_accion)
+          }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cerrar"
+        icon="pi pi-times"
+        (onClick)="cerrarModalVer()"
+        styleClass="p-button-secondary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast para notificaciones -->
+<p-toast
+  position="top-right"
+  [life]="5000"
+  [showTransformOptions]="'translateX(100%)'"
+  [hideTransformOptions]="'translateX(100%)'"
+  [showTransitionOptions]="'300ms ease-out'"
+  [hideTransitionOptions]="'250ms ease-in'"
+  [baseZIndex]="9999"
+>
+</p-toast>
+
+<!-- Modal de confirmación para eliminar -->
+<p-confirmDialog
+  [style]="{ width: '450px', maxWidth: '90vw' }"
+  [baseZIndex]="10000"
+  [closable]="true"
+  [dismissableMask]="false"
+  rejectButtonStyleClass="p-button-text"
+  acceptButtonStyleClass="p-button-danger"
+>
+</p-confirmDialog>

@@ -11,6 +11,7 @@ import { SubscriptionPlansComponent } from './features/planes/planes.component';
 import { FormulariosComponent } from './features/formularios/formularios.component';
 import { CamposFormularioComponent } from './features/campos-formulario/campos-formulario.component';
 import { RespuestaFormComponent } from './features/respuesta-form/respuesta-form.component';
+import { ReglasComponent } from './features/reglas/reglas.component';
 
 export const routes: Routes = [
   {
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'formularios', component: FormulariosComponent },
       { path: 'campos-formulario/:id', component: CamposFormularioComponent },
       { path: 'resp-formulario', component: RespuestaFormComponent },
+      { path: 'reglas', component: ReglasComponent },
     ],
   },
   {

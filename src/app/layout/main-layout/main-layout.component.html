@@ -111,10 +111,26 @@
             "
           >
             <i-lucide
-              [img]="ClipboardListIcon"
+              [img]="BookMarked"
               class="sidebar-icon lucide-icon"
             ></i-lucide>
             <span class="sidebar-text">Formularios y Documentos</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
+            routerLink="/reglas"
+            routerLinkActive="active"
+            class="sidebar-link"
+            (click)="onNavigate()"
+            [attr.aria-current]="isActiveRoute('/reglas') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="NotebookTabs"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Reglas</span>
           </a>
         </li>
 
@@ -218,5 +234,3 @@
   >
   </p-confirmDialog>
 </div>
-
-<!-- NO ESTAN SIRVIENDO LOS DIALOGS OSEA NO SE RENDERIZAN -->

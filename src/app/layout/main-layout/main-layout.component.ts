@@ -29,6 +29,8 @@ import {
   BuildingIcon,
   BellIcon,
   UserIcon,
+  NotebookTabs,
+  BookMarked,
 } from 'lucide-angular';
 
 @Component({
@@ -86,7 +88,8 @@ export default class MainLayoutComponent implements OnInit, OnDestroy {
   readonly BuildingIcon = BuildingIcon;
   readonly BellIcon = BellIcon;
   readonly UserIcon = UserIcon;
-
+  readonly NotebookTabs = NotebookTabs;
+  readonly BookMarked = BookMarked;
   constructor(
     private authService: AuthService,
     private router: Router,
