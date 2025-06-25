@@ -47,10 +47,9 @@ export class DocumentsService {
       console.log('FormData:', k, v);
     } */
 
-    // ARREGLAR ESTA MIERDAAAAA
 
-    return this.http.post<DocumentoCreate>(`${this.DOCS_URL}documentos/`, doc);
-
+    //return this.http.post<DocumentoCreate>(`${this.DOCS_URL}subir/`, doc);
+    return this.http.post(`${this.DOCS_URL}subir/`, formData);
     // return this.http.post(`${this.DOCS_URL}documentos/`, formData);
   }
 
