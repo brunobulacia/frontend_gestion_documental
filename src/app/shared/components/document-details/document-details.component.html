@@ -120,7 +120,7 @@
                 <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
                 Título:
               </span>
-              <span class="info-value">{{ documento?.titulo }}</span>
+              <span class="info-value">{{ documento.titulo }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">
@@ -128,7 +128,7 @@
                 Descripción:
               </span>
               <span class="info-value">{{
-                documento?.descripcion || "Sin descripción"
+                documento.descripcion || "Sin descripción"
               }}</span>
             </div>
             <div class="info-row">
@@ -137,7 +137,7 @@
                 Tipo:
               </span>
               <span class="info-value">{{
-                documento?.tipo?.nombre || "No especificado"
+                documento.tipo?.nombre || "No especificado"
               }}</span>
             </div>
             <div class="info-row">
@@ -146,7 +146,7 @@
                 Área:
               </span>
               <span class="info-value">{{
-                documento?.area?.nombre || "No especificada"
+                documento.area?.nombre || "No especificada"
               }}</span>
             </div>
             <div class="info-row">
@@ -157,10 +157,10 @@
               <span class="info-value">
                 <span
                   class="badge"
-                  [class.badge-success]="documento?.es_publico"
-                  [class.badge-warning]="!documento?.es_publico"
+                  [class.badge-success]="documento.es_publico"
+                  [class.badge-warning]="!documento.es_publico"
                 >
-                  {{ documento?.es_publico ? "Público" : "Privado" }}
+                  {{ documento.es_publico ? "Público" : "Privado" }}
                 </span>
               </span>
             </div>
@@ -177,7 +177,7 @@
                 Creado:
               </span>
               <span class="info-value">{{
-                documento?.fecha_creacion
+                documento.fecha_creacion
                   ? formatearFecha(documento.fecha_creacion)
                   : "No disponible"
               }}</span>
@@ -188,7 +188,7 @@
                 Modificado:
               </span>
               <span class="info-value">{{
-                documento?.fecha_modificacion
+                documento.fecha_modificacion
                   ? formatearFecha(documento.fecha_modificacion)
                   : "No disponible"
               }}</span>
@@ -199,7 +199,7 @@
                 Creado por:
               </span>
               <span class="info-value">{{
-                documento?.creado_por?.username || "Desconocido"
+                documento.creado_por.username || "Desconocido"
               }}</span>
             </div>
           </div>

@@ -56,8 +56,6 @@ import { FormulariosService } from '../../core/services/formularios/formularios.
   standalone: true,
   imports: [
     CommonModule,
-    RouterOutlet,
-    RouterLink,
     ReactiveFormsModule,
     FormsModule,
     LucideAngularModule,

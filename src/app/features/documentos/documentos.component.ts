@@ -779,9 +779,18 @@ export default class DocumentosComponent implements OnInit, OnDestroy {
         '¿Está seguro de que desea eliminar este documento? Esta acción no se puede deshacer.'
       )
     ) {
-      this.documentos = this.documentos.filter((doc) => doc.id !== id);
-      this.aplicarFiltros();
-      alert('Documento eliminado exitosamente');
+      this.documentosService.deleteDoc(id).subscribe({
+        next: () => {
+          console.log('Documento eliminado exitosamente');
+        },
+        error: (err) => {
+          console.error('Error al eliminar documento:', err);
+          alert(
+            'Error al eliminar documento: ' +
+              (err.error?.message || err.message)
+          );
+        },
+      });
     }
   }
 
