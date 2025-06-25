@@ -189,6 +189,15 @@
                   <i-lucide [img]="EyeIcon" class="lucide-icon"></i-lucide>
                 </button>
                 <button
+                  class="action-button edit"
+                  (click)="editarEjecucion(ejecucion)"
+                  [attr.aria-label]="'Editar ejecución ' + ejecucion.id"
+                  title="Editar"
+                  type="button"
+                >
+                  <i-lucide [img]="EditIcon" class="lucide-icon"></i-lucide>
+                </button>
+                <button
                   class="action-button delete"
                   (click)="confirmarEliminar(ejecucion)"
                   [attr.aria-label]="'Eliminar ejecución ' + ejecucion.id"
@@ -386,6 +395,160 @@
         icon="pi pi-check"
         (onClick)="crearEjecucion()"
         [disabled]="nuevaEjecucionForm.invalid || guardando"
+        [loading]="guardando"
+        styleClass="p-button-primary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal para editar ejecución -->
+<p-dialog
+  [(visible)]="mostrarModalEditar"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="ejecucion-dialog"
+  [style]="{ width: '700px', maxWidth: '95vw' }"
+  header="Editar Ejecución"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content">
+    <form
+      [formGroup]="editarEjecucionForm"
+      (ngSubmit)="actualizarEjecucion()"
+      novalidate
+    >
+      <!-- Campo Regla -->
+      <div class="form-field">
+        <label for="regla-edit" class="form-label">
+          <i-lucide [img]="SettingsIcon" class="lucide-icon"></i-lucide>
+          Regla Asociada
+        </label>
+        <input
+          id="regla-edit"
+          type="number"
+          formControlName="regla"
+          placeholder="ID de la regla"
+          class="form-input"
+          readonly
+        />
+        <small
+          *ngIf="
+            editarEjecucionForm.get('regla')?.invalid &&
+            editarEjecucionForm.get('regla')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessageEditar("regla") }}
+        </small>
+      </div>
+
+      <!-- Campo Evento -->
+      <div class="form-field">
+        <label for="evento-edit" class="form-label">
+          <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+          Evento *
+        </label>
+        <p-dropdown
+          [options]="eventosOpciones"
+          formControlName="evento"
+          placeholder="Seleccione un evento"
+          styleClass="form-select"
+          [showClear]="true"
+        ></p-dropdown>
+        <small
+          *ngIf="
+            editarEjecucionForm.get('evento')?.invalid &&
+            editarEjecucionForm.get('evento')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessageEditar("evento") }}
+        </small>
+      </div>
+
+      <!-- Campo Estado -->
+      <div class="form-field">
+        <label for="estado-edit" class="form-label">
+          <i-lucide [img]="CheckCircleIcon" class="lucide-icon"></i-lucide>
+          Estado *
+        </label>
+        <p-dropdown
+          [options]="estadosOpciones"
+          formControlName="estado"
+          placeholder="Seleccione un estado"
+          styleClass="form-select"
+          [showClear]="true"
+        ></p-dropdown>
+        <small
+          *ngIf="
+            editarEjecucionForm.get('estado')?.invalid &&
+            editarEjecucionForm.get('estado')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessageEditar("estado") }}
+        </small>
+      </div>
+
+      <!-- Campo Mensaje -->
+      <div class="form-field">
+        <label for="mensaje-edit" class="form-label">
+          <i-lucide [img]="MessageSquareIcon" class="lucide-icon"></i-lucide>
+          Mensaje *
+        </label>
+        <textarea
+          id="mensaje-edit"
+          formControlName="mensaje"
+          placeholder="Mensaje descriptivo de la ejecución"
+          class="form-textarea"
+          rows="3"
+        ></textarea>
+        <small
+          *ngIf="
+            editarEjecucionForm.get('mensaje')?.invalid &&
+            editarEjecucionForm.get('mensaje')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessageEditar("mensaje") }}
+        </small>
+      </div>
+
+      <div class="form-info">
+        <p class="info-text">
+          <i-lucide [img]="UserIcon" class="lucide-icon"></i-lucide>
+          El usuario y la fecha de creación se mantienen sin cambios.
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModalEditar()"
+        [disabled]="guardando"
+        styleClass="p-button-text"
+      >
+      </p-button>
+      <p-button
+        label="Actualizar"
+        icon="pi pi-check"
+        (onClick)="actualizarEjecucion()"
+        [disabled]="editarEjecucionForm.invalid || guardando"
         [loading]="guardando"
         styleClass="p-button-primary"
       >

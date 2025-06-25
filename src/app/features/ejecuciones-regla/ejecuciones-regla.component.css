@@ -378,7 +378,8 @@
 }
 
 .acciones-column {
-    width: 150px;
+    width: 180px;
+    /* Cambiar de 150px a 180px */
     text-align: center;
 }
 
@@ -548,6 +549,17 @@
 
 .action-button.delete:hover {
     background: rgba(var(--color-error-rgb), 0.2);
+    transform: translateY(-1px);
+}
+
+.action-button.edit {
+    background: rgba(var(--color-warning-rgb), 0.1);
+    color: var(--color-warning);
+    border: 1px solid rgba(var(--color-warning-rgb), 0.2);
+}
+
+.action-button.edit:hover {
+    background: rgba(var(--color-warning-rgb), 0.2);
     transform: translateY(-1px);
 }
 
