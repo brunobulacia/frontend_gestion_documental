@@ -189,6 +189,12 @@
     pointer-events: none;
 }
 
+.filter-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
 .filter-button {
     display: flex;
     align-items: center;
@@ -208,9 +214,116 @@
     border-color: var(--color-primary);
 }
 
+.filter-button.clear {
+    background: rgba(var(--color-error-rgb), 0.1);
+    color: var(--color-error);
+    border-color: rgba(var(--color-error-rgb), 0.2);
+}
+
+.filter-button.clear:hover {
+    background: rgba(var(--color-error-rgb), 0.2);
+}
+
 .filter-button .lucide-icon {
     width: 18px;
     height: 18px;
+}
+
+/* Botones de exportación */
+.export-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.export-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: 2px solid;
+    border-radius: var(--button-border-radius);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.export-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.export-button.pdf {
+    background: rgba(var(--color-error-rgb), 0.1);
+    color: var(--color-error);
+    border-color: rgba(var(--color-error-rgb), 0.2);
+}
+
+.export-button.pdf:hover:not(:disabled) {
+    background: rgba(var(--color-error-rgb), 0.2);
+    transform: translateY(-1px);
+}
+
+.export-button.excel {
+    background: rgba(var(--color-success-rgb), 0.1);
+    color: var(--color-success);
+    border-color: rgba(var(--color-success-rgb), 0.2);
+}
+
+.export-button.excel:hover:not(:disabled) {
+    background: rgba(var(--color-success-rgb), 0.2);
+    transform: translateY(-1px);
+}
+
+.export-button .lucide-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.export-text {
+    font-weight: 600;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Filtros avanzados */
+.advanced-filters {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--color-background);
+    border-radius: var(--card-border-radius);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--table-shadow);
+}
+
+.filter-row {
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.filter-dropdown {
+    width: 100%;
 }
 
 /* Contenedor de tabla mejorado */
@@ -229,6 +342,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.table-header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-xs);
 }
 
 .table-title {
@@ -251,6 +371,12 @@
     color: var(--color-text-light);
     font-size: 0.9rem;
     font-weight: 500;
+}
+
+.export-summary {
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
 /* Tabla moderna */
@@ -331,7 +457,6 @@
 .accion-column {
     width: 150px;
 }
-
 
 .ejecucion-column {
     width: 120px;
@@ -588,6 +713,56 @@
     font-size: 1rem;
     margin-bottom: var(--spacing-lg);
     max-width: 400px;
+}
+
+/* Paginación */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border);
+}
+
+.pagination-info {
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.pagination-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-background);
+    color: var(--color-text);
+    border: 2px solid var(--color-border);
+    border-radius: var(--button-border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pagination-button:hover:not(:disabled) {
+    background: var(--color-hover);
+    border-color: var(--color-primary);
+}
+
+.pagination-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-button .lucide-icon {
+    width: 16px;
+    height: 16px;
 }
 
 /* ESTILOS ESPECÍFICOS PARA PRIMENG MODAL */
@@ -989,6 +1164,15 @@
     .search-container {
         max-width: none;
     }
+
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        min-width: auto;
+    }
 }
 
 @media (max-width: 992px) {
@@ -1002,6 +1186,10 @@
     }
 
     .action-buttons {
+        flex-direction: column;
+    }
+
+    .export-buttons {
         flex-direction: column;
     }
 }
@@ -1040,6 +1228,20 @@
     .json-pair {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .table-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+
+    .table-header-actions {
+        align-items: center;
     }
 }
 
@@ -1176,3 +1378,17 @@
     font-style: italic;
 }
 
+/* Estilos para PrimeNG dropdowns */
+:host ::ng-deep .p-dropdown {
+    border: 2px solid var(--color-border);
+    border-radius: var(--button-border-radius);
+}
+
+:host ::ng-deep .p-dropdown:not(.p-disabled).p-focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+:host ::ng-deep .filter-dropdown .p-dropdown {
+    width: 100%;
+}

@@ -13,6 +13,7 @@ import { CamposFormularioComponent } from './features/campos-formulario/campos-f
 import { RespuestaFormComponent } from './features/respuesta-form/respuesta-form.component';
 import { ReglasComponent } from './features/reglas/reglas.component';
 import { EjecucionesReglaComponent } from './features/ejecuciones-regla/ejecuciones-regla.component';
+import { UsuariosComponent } from './features/usuarios/usuarios.component';
 
 export const routes: Routes = [
   {
@@ -33,6 +34,7 @@ export const routes: Routes = [
       { path: 'resp-formulario', component: RespuestaFormComponent },
       { path: 'reglas', component: ReglasComponent },
       { path: 'ejecuciones-reglas/:id', component: EjecucionesReglaComponent },
+      { path: 'usuarios', component: UsuariosComponent },
     ],
   },
   {

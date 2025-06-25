@@ -1,6 +1,6 @@
 import { Component, type OnInit, type OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterOutlet, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   FormBuilder,
   type FormGroup,
@@ -48,11 +48,18 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   List,
+  FileTextIcon,
+  FileSpreadsheetIcon,
+  DownloadIcon,
 } from 'lucide-angular';
 
 // Servicios y Modelos
 import { ReglasService } from '../../core/services/reglas/reglas.service';
 import type { ReglaAutomatica } from '../../models/reglas.model';
+
+// Librerías para exportación
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
 
 interface KeyValuePair {
   key: string;
@@ -106,12 +113,16 @@ export class ReglasComponent implements OnInit, OnDestroy {
   readonly ChevronLeftIcon = ChevronLeftIcon;
   readonly ChevronRightIcon = ChevronRightIcon;
   readonly List = List;
+  readonly FileTextIcon = FileTextIcon;
+  readonly FileSpreadsheetIcon = FileSpreadsheetIcon;
+  readonly DownloadIcon = DownloadIcon;
 
   // Propiedades del componente
   reglas: ReglaAutomatica[] = [];
   reglasFiltered: ReglaAutomatica[] = [];
   cargando = true;
   guardando = false;
+  exportando: string | null = null;
 
   // Modal
   mostrarModal = false;
@@ -123,6 +134,9 @@ export class ReglasComponent implements OnInit, OnDestroy {
   // Filtros y búsqueda
   filtroTexto = '';
   mostrarFiltros = false;
+  filtroEvento: string | null = null;
+  filtroAccion: string | null = null;
+  filtroEstado: boolean | null = null;
 
   // Paginación
   paginaActual = 1;
@@ -150,6 +164,11 @@ export class ReglasComponent implements OnInit, OnDestroy {
     { label: 'Actualizar estado del documento', value: 'cambiar_estado' },
     { label: 'Activar flujo de trabajo', value: 'activar_workflow' },
     { label: 'Actualizar campo del documento', value: 'actualizar_campo' },
+  ];
+
+  estadosOpciones = [
+    { label: 'Activa', value: true },
+    { label: 'Inactiva', value: false },
   ];
 
   // Para el editor JSON
@@ -222,7 +241,7 @@ export class ReglasComponent implements OnInit, OnDestroy {
     const sub = this.reglasService.getReglas().subscribe({
       next: (data) => {
         this.reglas = data;
-        this.filtrarReglas();
+        this.aplicarTodosFiltros();
         this.calcularPaginacion();
         this.cargando = false;
         console.log('Reglas cargadas:', this.reglas);
@@ -243,19 +262,68 @@ export class ReglasComponent implements OnInit, OnDestroy {
    * Filtra las reglas según el texto de búsqueda
    */
   filtrarReglas(): void {
-    if (!this.filtroTexto.trim()) {
-      this.reglasFiltered = [...this.reglas];
-    } else {
+    this.aplicarTodosFiltros();
+  }
+
+  /**
+   * Aplica filtros avanzados
+   */
+  aplicarFiltrosAvanzados(): void {
+    this.aplicarTodosFiltros();
+  }
+
+  /**
+   * Aplica todos los filtros combinados
+   */
+  private aplicarTodosFiltros(): void {
+    let reglasFiltradas = [...this.reglas];
+
+    // Filtro de texto
+    if (this.filtroTexto.trim()) {
       const filtro = this.filtroTexto.toLowerCase().trim();
-      this.reglasFiltered = this.reglas.filter(
+      reglasFiltradas = reglasFiltradas.filter(
         (regla) =>
           regla.nombre.toLowerCase().includes(filtro) ||
           regla.evento.toLowerCase().includes(filtro) ||
           regla.accion.toLowerCase().includes(filtro)
       );
     }
+
+    // Filtro por evento
+    if (this.filtroEvento) {
+      reglasFiltradas = reglasFiltradas.filter(
+        (regla) => regla.evento === this.filtroEvento
+      );
+    }
+
+    // Filtro por acción
+    if (this.filtroAccion) {
+      reglasFiltradas = reglasFiltradas.filter(
+        (regla) => regla.accion === this.filtroAccion
+      );
+    }
+
+    // Filtro por estado
+    if (this.filtroEstado !== null) {
+      reglasFiltradas = reglasFiltradas.filter(
+        (regla) => regla.activa === this.filtroEstado
+      );
+    }
+
+    this.reglasFiltered = reglasFiltradas;
     this.paginaActual = 1;
     this.calcularPaginacion();
+  }
+
+  /**
+   * Verifica si hay filtros activos
+   */
+  tienesFiltrosActivos(): boolean {
+    return !!(
+      this.filtroEvento ||
+      this.filtroAccion ||
+      this.filtroEstado !== null
+    );
   }
 
   /**
@@ -282,7 +350,28 @@ export class ReglasComponent implements OnInit, OnDestroy {
    */
   limpiarFiltros(): void {
     this.filtroTexto = '';
-    this.filtrarReglas();
+    this.aplicarTodosFiltros();
+  }
+
+  /**
+   * Limpia los filtros avanzados
+   */
+  limpiarFiltrosAvanzados(): void {
+    this.filtroEvento = null;
+    this.filtroAccion = null;
+    this.filtroEstado = null;
+    this.aplicarTodosFiltros();
+  }
+
+  /**
+   * Limpia todos los filtros
+   */
+  limpiarTodosFiltros(): void {
+    this.filtroTexto = '';
+    this.filtroEvento = null;
+    this.filtroAccion = null;
+    this.filtroEstado = null;
+    this.aplicarTodosFiltros();
   }
 
   /**
@@ -290,6 +379,159 @@ export class ReglasComponent implements OnInit, OnDestroy {
    */
   toggleFiltros(): void {
     this.mostrarFiltros = !this.mostrarFiltros;
+  }
+
+  /**
+   * Exporta las reglas filtradas a PDF
+   */
+  async exportarPDF(): Promise<void> {
+    if (this.reglasFiltered.length === 0) {
+      this.mostrarError('No hay datos para exportar');
+      return;
+    }
+
+    this.exportando = 'pdf';
+
+    try {
+      const doc = new jsPDF();
+
+      // Configuración del documento
+      doc.setFontSize(18);
+      doc.text('Reporte de Reglas Automáticas', 14, 22);
+
+      doc.setFontSize(11);
+      doc.text(
+        `Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`,
+        14,
+        30
+      );
+      doc.text(`Total de reglas: ${this.reglasFiltered.length}`, 14, 36);
+
+      // Headers de la tabla
+      let yPosition = 50;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+
+      const headers = ['ID', 'Nombre', 'Evento', 'Acción', 'Estado', 'Fecha'];
+      const columnWidths = [15, 40, 35, 35, 20, 30];
+      let xPosition = 14;
+
+      // Dibujar headers
+      headers.forEach((header, index) => {
+        doc.text(header, xPosition, yPosition);
+        xPosition += columnWidths[index];
+      });
+
+      // Línea separadora
+      yPosition += 5;
+      doc.line(14, yPosition, 195, yPosition);
+      yPosition += 10;
+
+      // Datos de la tabla
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+
+      this.reglasFiltered.forEach((regla, index) => {
+        if (yPosition > 270) {
+          // Nueva página si es necesario
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        xPosition = 14;
+        const rowData = [
+          regla.id.toString(),
+          regla.nombre.length > 25
+            ? regla.nombre.substring(0, 25) + '...'
+            : regla.nombre,
+          this.getEventoTexto(regla.evento),
+          this.getAccionTexto(regla.accion),
+          regla.activa ? 'Activa' : 'Inactiva',
+          this.formatearFecha(regla.creada_en),
+        ];
+
+        rowData.forEach((data, colIndex) => {
+          doc.text(data, xPosition, yPosition);
+          xPosition += columnWidths[colIndex];
+        });
+
+        yPosition += 8;
+      });
+
+      // Guardar el archivo
+      const fileName = `reglas-automaticas-${
+        new Date().toISOString().split('T')[0]
+      }.pdf`;
+      doc.save(fileName);
+
+      this.mostrarExito(`PDF exportado correctamente: ${fileName}`);
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      this.mostrarError('Error al generar el archivo PDF');
+    } finally {
+      this.exportando = null;
+    }
+  }
+
+  /**
+   * Exporta las reglas filtradas a Excel
+   */
+  async exportarExcel(): Promise<void> {
+    if (this.reglasFiltered.length === 0) {
+      this.mostrarError('No hay datos para exportar');
+      return;
+    }
+
+    this.exportando = 'excel';
+
+    try {
+      // Preparar datos para Excel
+      const datosExcel = this.reglasFiltered.map((regla) => ({
+        ID: regla.id,
+        Nombre: regla.nombre,
+        Evento: this.getEventoTexto(regla.evento),
+        Acción: this.getAccionTexto(regla.accion),
+        Estado: regla.activa ? 'Activa' : 'Inactiva',
+        'Fecha de Creación': this.formatearFecha(regla.creada_en),
+        Condiciones: JSON.stringify(regla.condicion),
+        'Parámetros de Acción': JSON.stringify(regla.parametros_accion),
+        'Creada por Usuario ID': regla.creada_por,
+      }));
+
+      // Crear libro de trabajo
+      const ws = XLSX.utils.json_to_sheet(datosExcel);
+      const wb = XLSX.utils.book_new();
+
+      // Configurar ancho de columnas
+      const colWidths = [
+        { wch: 8 }, // ID
+        { wch: 30 }, // Nombre
+        { wch: 25 }, // Evento
+        { wch: 25 }, // Acción
+        { wch: 12 }, // Estado
+        { wch: 18 }, // Fecha
+        { wch: 40 }, // Condiciones
+        { wch: 40 }, // Parámetros
+        { wch: 15 }, // Creada por
+      ];
+      ws['!cols'] = colWidths;
+
+      // Agregar hoja al libro
+      XLSX.utils.book_append_sheet(wb, ws, 'Reglas Automáticas');
+
+      // Generar y descargar archivo
+      const fileName = `reglas-automaticas-${
+        new Date().toISOString().split('T')[0]
+      }.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      this.mostrarExito(`Excel exportado correctamente: ${fileName}`);
+    } catch (error) {
+      console.error('Error al exportar Excel:', error);
+      this.mostrarError('Error al generar el archivo Excel');
+    } finally {
+      this.exportando = null;
+    }
   }
 
   /**

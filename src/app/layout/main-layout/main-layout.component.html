@@ -38,6 +38,22 @@
 
         <li class="sidebar-item">
           <a
+            routerLink="/usuarios"
+            routerLinkActive="active"
+            class="sidebar-link"
+            (click)="onNavigate()"
+            [attr.aria-current]="isActiveRoute('/usuarios') ? 'page' : null"
+          >
+            <i-lucide
+              [img]="UserRoundCog"
+              class="sidebar-icon lucide-icon"
+            ></i-lucide>
+            <span class="sidebar-text">Usuarios</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a
             routerLink="/documents"
             routerLinkActive="active"
             class="sidebar-link"

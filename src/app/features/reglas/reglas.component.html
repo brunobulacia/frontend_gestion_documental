@@ -37,15 +37,109 @@
         [attr.aria-label]="'Buscar reglas'"
       />
     </div>
-    <button
-      class="filter-button"
-      (click)="toggleFiltros()"
-      [attr.aria-label]="'Mostrar filtros avanzados'"
-      type="button"
-    >
-      <i-lucide [img]="FilterIcon" class="lucide-icon"></i-lucide>
-      Filtros
-    </button>
+
+    <!-- Filtros avanzados -->
+    <div class="filter-actions">
+      <button
+        class="filter-button"
+        (click)="toggleFiltros()"
+        [attr.aria-label]="'Mostrar filtros avanzados'"
+        type="button"
+      >
+        <i-lucide [img]="FilterIcon" class="lucide-icon"></i-lucide>
+        Filtros
+      </button>
+
+      <!-- Botones de exportación -->
+      <div class="export-buttons">
+        <button
+          class="export-button pdf"
+          (click)="exportarPDF()"
+          [disabled]="reglasFiltered.length === 0 || exportando"
+          title="Exportar a PDF"
+          type="button"
+        >
+          <i-lucide [img]="FileTextIcon" class="lucide-icon"></i-lucide>
+          <span class="export-text">PDF</span>
+          <i-lucide
+            *ngIf="exportando === 'pdf'"
+            [img]="LoaderIcon"
+            class="loading-spinner lucide-icon"
+          ></i-lucide>
+        </button>
+
+        <button
+          class="export-button excel"
+          (click)="exportarExcel()"
+          [disabled]="reglasFiltered.length === 0 || exportando"
+          title="Exportar a Excel"
+          type="button"
+        >
+          <i-lucide [img]="FileSpreadsheetIcon" class="lucide-icon"></i-lucide>
+          <span class="export-text">Excel</span>
+          <i-lucide
+            *ngIf="exportando === 'excel'"
+            [img]="LoaderIcon"
+            class="loading-spinner lucide-icon"
+          ></i-lucide>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros avanzados expandibles -->
+  <div *ngIf="mostrarFiltros" class="advanced-filters">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label for="filtroEvento">Evento:</label>
+        <p-dropdown
+          id="filtroEvento"
+          [options]="eventosOpciones"
+          [(ngModel)]="filtroEvento"
+          placeholder="Todos los eventos"
+          [showClear]="true"
+          (onChange)="aplicarFiltrosAvanzados()"
+          styleClass="filter-dropdown"
+        ></p-dropdown>
+      </div>
+
+      <div class="filter-group">
+        <label for="filtroAccion">Acción:</label>
+        <p-dropdown
+          id="filtroAccion"
+          [options]="accionesOpciones"
+          [(ngModel)]="filtroAccion"
+          placeholder="Todas las acciones"
+          [showClear]="true"
+          (onChange)="aplicarFiltrosAvanzados()"
+          styleClass="filter-dropdown"
+        ></p-dropdown>
+      </div>
+
+      <div class="filter-group">
+        <label for="filtroEstado">Estado:</label>
+        <p-dropdown
+          id="filtroEstado"
+          [options]="estadosOpciones"
+          [(ngModel)]="filtroEstado"
+          placeholder="Todos los estados"
+          [showClear]="true"
+          (onChange)="aplicarFiltrosAvanzados()"
+          styleClass="filter-dropdown"
+        ></p-dropdown>
+      </div>
+
+      <div class="filter-group">
+        <button
+          class="filter-button clear"
+          (click)="limpiarFiltrosAvanzados()"
+          type="button"
+        >
+          <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Loading -->
@@ -58,7 +152,9 @@
   <div *ngIf="!cargando">
     <!-- Estado vacío -->
     <div
-      *ngIf="reglasFiltered.length === 0 && !filtroTexto"
+      *ngIf="
+        reglasFiltered.length === 0 && !filtroTexto && !tienesFiltrosActivos()
+      "
       class="empty-state"
     >
       <i-lucide [img]="SettingsIcon" class="empty-icon lucide-icon"></i-lucide>
@@ -74,15 +170,24 @@
     </div>
 
     <!-- Sin resultados de búsqueda -->
-    <div *ngIf="reglasFiltered.length === 0 && filtroTexto" class="empty-state">
+    <div
+      *ngIf="
+        reglasFiltered.length === 0 && (filtroTexto || tienesFiltrosActivos())
+      "
+      class="empty-state"
+    >
       <i-lucide [img]="SearchIcon" class="empty-icon lucide-icon"></i-lucide>
       <h3 class="empty-title">Sin resultados</h3>
       <p class="empty-description">
-        No se encontraron reglas que coincidan con "{{ filtroTexto }}".
+        No se encontraron reglas que coincidan con los filtros aplicados.
       </p>
-      <button class="filter-button" (click)="limpiarFiltros()" type="button">
+      <button
+        class="filter-button"
+        (click)="limpiarTodosFiltros()"
+        type="button"
+      >
         <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
-        Limpiar Búsqueda
+        Limpiar Todos los Filtros
       </button>
     </div>
 
@@ -93,9 +198,14 @@
           <i-lucide [img]="ListIcon" class="lucide-icon"></i-lucide>
           Lista de Reglas
         </h3>
-        <span class="table-info">
-          {{ reglasFiltered.length }} de {{ reglas.length }} reglas
-        </span>
+        <div class="table-header-actions">
+          <span class="table-info">
+            {{ reglasFiltered.length }} de {{ reglas.length }} reglas
+          </span>
+          <div class="export-summary" *ngIf="reglasFiltered.length > 0">
+            <small>{{ reglasFiltered.length }} reglas para exportar</small>
+          </div>
+        </div>
       </div>
 
       <table class="reglas-table">
@@ -166,7 +276,7 @@
               <button
                 (click)="verEjecuciones(regla.id)"
                 type="button"
-                class="accion-button view"
+                class="action-button view"
               >
                 <i-lucide [img]="List" class="lucide-icon"></i-lucide>
               </button>

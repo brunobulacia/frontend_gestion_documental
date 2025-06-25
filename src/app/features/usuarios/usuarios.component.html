@@ -1,0 +1,633 @@
+<div class="usuarios-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-title">
+      <i-lucide [img]="UsersIcon" class="icon"></i-lucide>
+      <div>
+        <h1>Gestión de Usuarios</h1>
+        <p>Administra los usuarios del sistema</p>
+      </div>
+    </div>
+    <button class="btn-primary" (click)="abrirModalCrear()">
+      <i-lucide [img]="PlusIcon" class="icon"></i-lucide>
+      Nuevo Usuario
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-controls">
+    <div class="search-container">
+      <i-lucide [img]="SearchIcon" class="search-icon"></i-lucide>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar usuarios..."
+        [(ngModel)]="filtroTexto"
+        (input)="filtrarUsuarios()"
+      />
+    </div>
+    <button class="btn-secondary" (click)="limpiarFiltros()">
+      <i-lucide [img]="XIcon" class="icon"></i-lucide>
+      Limpiar
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="loading">
+    <i-lucide [img]="LoaderIcon" class="spinner"></i-lucide>
+    <p>Cargando usuarios...</p>
+  </div>
+
+  <!-- Contenido -->
+  <div *ngIf="!cargando">
+    <!-- Estado vacío -->
+    <div
+      *ngIf="usuariosFiltered.length === 0 && !filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide [img]="UsersIcon" class="empty-icon"></i-lucide>
+      <h3>No hay usuarios</h3>
+      <p>No se han registrado usuarios en el sistema.</p>
+      <button class="btn-primary" (click)="abrirModalCrear()">
+        <i-lucide [img]="PlusIcon" class="icon"></i-lucide>
+        Crear Primer Usuario
+      </button>
+    </div>
+
+    <!-- Sin resultados -->
+    <div
+      *ngIf="usuariosFiltered.length === 0 && filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide [img]="SearchIcon" class="empty-icon"></i-lucide>
+      <h3>Sin resultados</h3>
+      <p>No se encontraron usuarios que coincidan con "{{ filtroTexto }}".</p>
+      <button class="btn-secondary" (click)="limpiarFiltros()">
+        Limpiar Búsqueda
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="usuariosFiltered.length > 0" class="table-container">
+      <div class="table-header">
+        <h3>Lista de Usuarios</h3>
+        <span
+          >{{ usuariosFiltered.length }} de {{ usuarios.length }} usuarios</span
+        >
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <!-- <th>Roles</th> -->
+            <th>Admin</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="
+              let usuario of usuariosFiltered
+                | slice
+                  : (paginaActual - 1) * elementosPorPagina
+                  : paginaActual * elementosPorPagina;
+              trackBy: trackByUsuario
+            "
+          >
+            <td>
+              <span class="badge badge-primary">#{{ usuario.id }}</span>
+            </td>
+            <td>
+              <div class="user-info">
+                <i-lucide [img]="UserIcon" class="icon"></i-lucide>
+                {{ usuario.username }}
+              </div>
+            </td>
+            <td>
+              <div class="email-info">
+                <i-lucide [img]="MailIcon" class="icon"></i-lucide>
+                {{ usuario.email }}
+              </div>
+            </td>
+            <!-- <td>
+              <div class="roles">
+                <span
+                  *ngFor="let rol of usuario.roles"
+                  class="badge badge-warning"
+                >
+                  {{ [rol] }}
+                </span>
+              </div>
+            </td> -->
+            <td>
+              <span
+                [class]="
+                  'badge ' +
+                  (usuario.es_admin ? 'badge-success' : 'badge-secondary')
+                "
+              >
+                <i-lucide
+                  [img]="usuario.es_admin ? CrownIcon : UserIcon"
+                  class="icon"
+                ></i-lucide>
+                {{ usuario.es_admin ? "Sí" : "No" }}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                <button
+                  class="btn-action btn-info"
+                  (click)="verUsuario(usuario)"
+                  title="Ver"
+                >
+                  <i-lucide [img]="EyeIcon" class="icon"></i-lucide>
+                </button>
+                <button
+                  class="btn-action btn-warning"
+                  (click)="editarUsuario(usuario)"
+                  title="Editar"
+                >
+                  <i-lucide [img]="EditIcon" class="icon"></i-lucide>
+                </button>
+                <button
+                  class="btn-action btn-danger"
+                  (click)="confirmarEliminar(usuario)"
+                  title="Eliminar"
+                >
+                  <i-lucide [img]="TrashIcon" class="icon"></i-lucide>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <div class="pagination" *ngIf="totalPaginas > 1">
+        <div class="pagination-info">
+          Mostrando {{ (paginaActual - 1) * elementosPorPagina + 1 }} -
+          {{
+            Math.min(paginaActual * elementosPorPagina, usuariosFiltered.length)
+          }}
+          de {{ usuariosFiltered.length }} usuarios
+        </div>
+        <div class="pagination-controls">
+          <button
+            class="btn-secondary"
+            (click)="cambiarPagina(paginaActual - 1)"
+            [disabled]="paginaActual === 1"
+          >
+            <i-lucide [img]="ChevronLeftIcon" class="icon"></i-lucide>
+            Anterior
+          </button>
+          <button
+            class="btn-secondary"
+            (click)="cambiarPagina(paginaActual + 1)"
+            [disabled]="paginaActual === totalPaginas"
+          >
+            Siguiente
+            <i-lucide [img]="ChevronRightIcon" class="icon"></i-lucide>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear -->
+<p-dialog
+  [(visible)]="mostrarModalCrear"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '600px', maxWidth: '95vw' }"
+  header="Crear Nuevo Usuario"
+>
+  <div class="modal-content">
+    <form [formGroup]="nuevoUsuarioForm" (ngSubmit)="crearUsuario()">
+      <div class="form-field">
+        <label>
+          <i-lucide [img]="UserIcon" class="icon"></i-lucide>
+          Nombre de Usuario *
+        </label>
+        <input
+          type="text"
+          formControlName="username"
+          placeholder="Ingrese el nombre de usuario"
+          class="form-input"
+        />
+        <small
+          *ngIf="
+            nuevoUsuarioForm.get('username')?.invalid &&
+            nuevoUsuarioForm.get('username')?.touched
+          "
+          class="error"
+        >
+          {{ getErrorMessage("username") }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label>
+          <i-lucide [img]="MailIcon" class="icon"></i-lucide>
+          Email *
+        </label>
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="usuario@ejemplo.com"
+          class="form-input"
+        />
+        <small
+          *ngIf="
+            nuevoUsuarioForm.get('email')?.invalid &&
+            nuevoUsuarioForm.get('email')?.touched
+          "
+          class="error"
+        >
+          {{ getErrorMessage("email") }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label>
+          <i-lucide [img]="ShieldIcon" class="icon"></i-lucide>
+          Roles *
+        </label>
+        <p-multiSelect
+          [options]="rolesOpciones"
+          formControlName="roles"
+          placeholder="Seleccione los roles"
+          [showClear]="true"
+        ></p-multiSelect>
+        <small
+          *ngIf="
+            nuevoUsuarioForm.get('roles')?.invalid &&
+            nuevoUsuarioForm.get('roles')?.touched
+          "
+          class="error"
+        >
+          {{ getErrorMessage("roles") }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <div class="checkbox-field">
+          <p-checkbox
+            formControlName="es_admin"
+            [binary]="true"
+            inputId="es_admin"
+          ></p-checkbox>
+          <label for="es_admin">
+            <i-lucide [img]="CrownIcon" class="icon"></i-lucide>
+            ¿Es administrador del sistema?
+          </label>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModalCrear()"
+        [disabled]="guardando"
+      ></p-button>
+      <p-button
+        label="Crear"
+        icon="pi pi-check"
+        (onClick)="crearUsuario()"
+        [disabled]="nuevoUsuarioForm.invalid || guardando"
+        [loading]="guardando"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal Editar -->
+<p-dialog
+  [(visible)]="mostrarModalEditar"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '600px', maxWidth: '95vw' }"
+  header="Editar Usuario"
+>
+  <div class="modal-content">
+    <form [formGroup]="editarUsuarioForm" (ngSubmit)="actualizarUsuario()">
+      <div class="form-field">
+        <label>
+          <i-lucide [img]="UserIcon" class="icon"></i-lucide>
+          Nombre de Usuario *
+        </label>
+        <input
+          type="text"
+          formControlName="username"
+          placeholder="Ingrese el nombre de usuario"
+          class="form-input"
+        />
+        <small
+          *ngIf="
+            editarUsuarioForm.get('username')?.invalid &&
+            editarUsuarioForm.get('username')?.touched
+          "
+          class="error"
+        >
+          {{ getErrorMessageEditar("username") }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label>
+          <i-lucide [img]="MailIcon" class="icon"></i-lucide>
+          Email *
+        </label>
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="usuario@ejemplo.com"
+          class="form-input"
+        />
+        <small
+          *ngIf="
+            editarUsuarioForm.get('email')?.invalid &&
+            editarUsuarioForm.get('email')?.touched
+          "
+          class="error"
+        >
+          {{ getErrorMessageEditar("email") }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label>
+          <i-lucide [img]="ShieldIcon" class="icon"></i-lucide>
+          Roles *
+        </label>
+        <p-multiSelect
+          [options]="rolesOpciones"
+          formControlName="roles"
+          placeholder="Seleccione los roles"
+          [showClear]="true"
+        ></p-multiSelect>
+        <small
+          *ngIf="
+            editarUsuarioForm.get('roles')?.invalid &&
+            editarUsuarioForm.get('roles')?.touched
+          "
+          class="error"
+        >
+          {{ getErrorMessageEditar("roles") }}
+        </small>
+      </div>
+
+      <div class="form-field">
+        <div class="checkbox-field">
+          <p-checkbox
+            formControlName="es_admin"
+            [binary]="true"
+            inputId="es_admin_edit"
+          ></p-checkbox>
+          <label for="es_admin_edit">
+            <i-lucide [img]="CrownIcon" class="icon"></i-lucide>
+            ¿Es administrador del sistema?
+          </label>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModalEditar()"
+        [disabled]="guardando"
+      ></p-button>
+      <p-button
+        label="Actualizar"
+        icon="pi pi-check"
+        (onClick)="actualizarUsuario()"
+        [disabled]="editarUsuarioForm.invalid || guardando"
+        [loading]="guardando"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal Ver -->
+<p-dialog
+  [(visible)]="mostrarModalVer"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '700px', maxWidth: '95vw' }"
+  header="Detalles del Usuario"
+>
+  <div class="modal-content" *ngIf="usuarioSeleccionado">
+    <div class="details-grid">
+      <div class="detail-item">
+        <label>
+          <i-lucide [img]="UserIcon" class="icon"></i-lucide>
+          ID:
+        </label>
+        <span>#{{ usuarioSeleccionado.id }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>
+          <i-lucide [img]="UserIcon" class="icon"></i-lucide>
+          Usuario:
+        </label>
+        <span>{{ usuarioSeleccionado.username }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>
+          <i-lucide [img]="MailIcon" class="icon"></i-lucide>
+          Email:
+        </label>
+        <span>{{ usuarioSeleccionado.email }}</span>
+      </div>
+
+      <div class="detail-item">
+        <label>
+          <i-lucide [img]="CrownIcon" class="icon"></i-lucide>
+          Administrador:
+        </label>
+        <span
+          class="badge"
+          [ngClass]="
+            usuarioSeleccionado.es_admin ? 'badge-success' : 'badge-secondary'
+          "
+        >
+          <i-lucide
+            [img]="usuarioSeleccionado.es_admin ? CrownIcon : UserIcon"
+            class="icon"
+          ></i-lucide>
+          {{ usuarioSeleccionado.es_admin ? "Sí" : "No" }}
+        </span>
+      </div>
+
+      <div class="detail-item full-width">
+        <label>
+          <i-lucide [img]="ShieldIcon" class="icon"></i-lucide>
+          Roles:
+        </label>
+        <div class="roles-container">
+          <span
+            *ngFor="let rol of usuarioSeleccionado.roles"
+            class="badge badge-warning"
+          >
+            {{ [rol] }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Sección Organización -->
+      <div class="detail-section full-width">
+        <h4 class="section-title">
+          <i-lucide [img]="BuildingIcon" class="icon"></i-lucide>
+          Información de Organización
+        </h4>
+
+        <div
+          *ngIf="usuarioSeleccionado.organizacion; else noOrganizacion"
+          class="org-details"
+        >
+          <div class="detail-item">
+            <label>Nombre:</label>
+            <span>{{ usuarioSeleccionado.organizacion.nombre }}</span>
+          </div>
+
+          <div class="detail-item">
+            <label>Dirección:</label>
+            <span>{{
+              usuarioSeleccionado.organizacion.direccion || "No especificada"
+            }}</span>
+          </div>
+
+          <div class="detail-item">
+            <label>Teléfono:</label>
+            <span>{{
+              usuarioSeleccionado.organizacion.telefono || "No especificado"
+            }}</span>
+          </div>
+
+          <!-- Sección Plan -->
+          <div
+            class="plan-section"
+            *ngIf="usuarioSeleccionado.organizacion.plan; else noPlan"
+          >
+            <h5 class="plan-title">Plan Activo</h5>
+            <div class="plan-details">
+              <div class="plan-header">
+                <span class="plan-name">{{
+                  usuarioSeleccionado.organizacion.plan.nombre
+                }}</span>
+                <span class="plan-price"
+                  >${{ usuarioSeleccionado.organizacion.plan.precio }}</span
+                >
+              </div>
+              <p class="plan-description">
+                {{ usuarioSeleccionado.organizacion.plan.descripcion }}
+              </p>
+
+              <div class="plan-limits">
+                <div class="limit-item">
+                  <span class="limit-label">Usuarios:</span>
+                  <span class="limit-value">{{
+                    usuarioSeleccionado.organizacion.plan.maximo_usuarios
+                  }}</span>
+                </div>
+                <div class="limit-item">
+                  <span class="limit-label">Documentos:</span>
+                  <span class="limit-value">{{
+                    usuarioSeleccionado.organizacion.plan.maximo_documentos
+                  }}</span>
+                </div>
+                <div class="limit-item">
+                  <span class="limit-label">Almacenamiento:</span>
+                  <span class="limit-value"
+                    >{{
+                      usuarioSeleccionado.organizacion.plan
+                        .maximo_almacenamiento
+                    }}
+                    GB</span
+                  >
+                </div>
+                <div class="limit-item">
+                  <span class="limit-label">Roles:</span>
+                  <span class="limit-value">{{
+                    usuarioSeleccionado.organizacion.plan.maximo_roles
+                  }}</span>
+                </div>
+                <div class="limit-item">
+                  <span class="limit-label">OCR:</span>
+                  <span
+                    class="badge"
+                    [ngClass]="
+                      usuarioSeleccionado.organizacion.plan.ocr
+                        ? 'badge-success'
+                        : 'badge-secondary'
+                    "
+                  >
+                    {{
+                      usuarioSeleccionado.organizacion.plan.ocr
+                        ? "Incluido"
+                        : "No incluido"
+                    }}
+                  </span>
+                </div>
+                <div class="limit-item">
+                  <span class="limit-label">Duración:</span>
+                  <span class="limit-value"
+                    >{{
+                      usuarioSeleccionado.organizacion.plan.duracion_meses
+                    }}
+                    meses</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noPlan>
+            <div class="no-data">
+              <i-lucide [img]="AlertCircleIcon" class="icon"></i-lucide>
+              <span>No hay plan asignado</span>
+            </div>
+          </ng-template>
+        </div>
+
+        <ng-template #noOrganizacion>
+          <div class="no-data">
+            <i-lucide [img]="AlertCircleIcon" class="icon"></i-lucide>
+            <span>No hay organización asignada</span>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cerrar"
+        icon="pi pi-times"
+        (onClick)="cerrarModalVer()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast -->
+<p-toast position="top-right" [life]="5000"></p-toast>
+
+<!-- Confirm Dialog -->
+<p-confirmDialog [style]="{ width: '450px' }"></p-confirmDialog>
