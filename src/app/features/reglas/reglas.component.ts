@@ -1,6 +1,6 @@
 import { Component, type OnInit, type OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet, Router } from '@angular/router';
 import {
   FormBuilder,
   type FormGroup,
@@ -47,6 +47,7 @@ import {
   HashIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  List,
 } from 'lucide-angular';
 
 // Servicios y Modelos
@@ -106,6 +107,7 @@ export class ReglasComponent implements OnInit, OnDestroy {
   readonly HashIcon = HashIcon;
   readonly ChevronLeftIcon = ChevronLeftIcon;
   readonly ChevronRightIcon = ChevronRightIcon;
+  readonly List = List;
 
   // Propiedades del componente
   reglas: ReglaAutomatica[] = [];
@@ -160,7 +162,8 @@ export class ReglasComponent implements OnInit, OnDestroy {
     private reglasService: ReglasService,
     private fb: FormBuilder,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private router: Router
   ) {
     this.creada_por = this.obtenerUsuarioActual();
     this.reglaForm = this.crearFormulario();
@@ -187,6 +190,10 @@ export class ReglasComponent implements OnInit, OnDestroy {
       }
     }
     return 1;
+  }
+
+  verEjecuciones(id_regla: number): void {
+    this.router.navigate(['/ejecuciones-reglas', id_regla]);
   }
 
   /**

@@ -107,6 +107,7 @@
             <th class="accion-column">Acción</th>
             <th class="activa-column">Estado</th>
             <th class="fecha-column">Fecha Creación</th>
+            <th class="ejecucion-column">Ejecuciones</th>
             <th class="acciones-column">Acciones</th>
           </tr>
         </thead>
@@ -160,6 +161,15 @@
                 <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
                 {{ formatearFecha(regla.creada_en) }}
               </div>
+            </td>
+            <td class="ejecucion-column">
+              <button
+                (click)="verEjecuciones(regla.id)"
+                type="button"
+                class="accion-button view"
+              >
+                <i-lucide [img]="List" class="lucide-icon"></i-lucide>
+              </button>
             </td>
             <td class="acciones-column">
               <div class="action-buttons">

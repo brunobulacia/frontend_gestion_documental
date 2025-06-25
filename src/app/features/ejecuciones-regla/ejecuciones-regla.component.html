@@ -1,0 +1,515 @@
+<!-- ejecuciones-regla.component.html -->
+<div class="ejecuciones-container">
+  <!-- Header mejorado -->
+  <div class="page-header">
+    <div class="page-title">
+      <i-lucide [img]="ActivityIcon" class="lucide-icon"></i-lucide>
+      <div>
+        <h1>Ejecuciones de Reglas</h1>
+        <p class="page-subtitle">
+          Historial de ejecuciones para la regla #{{ reglaId }}
+        </p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a
+        [routerLink]="['/reglas']"
+        class="back-button"
+        [attr.aria-label]="'Volver a reglas'"
+      >
+        <i-lucide [img]="ArrowLeftIcon" class="lucide-icon"></i-lucide>
+        Volver a Reglas
+      </a>
+      <button
+        class="create-button"
+        (click)="abrirModalCrear()"
+        [attr.aria-label]="'Crear nueva ejecución'"
+        type="button"
+      >
+        <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+        Nueva Ejecución
+      </button>
+    </div>
+  </div>
+
+  <!-- Controles de filtro -->
+  <div class="filter-controls">
+    <div class="search-container">
+      <i-lucide [img]="SearchIcon" class="search-icon lucide-icon"></i-lucide>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por ID, evento, estado o mensaje..."
+        [(ngModel)]="filtroTexto"
+        (input)="filtrarEjecuciones()"
+        [attr.aria-label]="'Buscar ejecuciones'"
+      />
+    </div>
+    <button
+      class="filter-button"
+      (click)="limpiarFiltros()"
+      [attr.aria-label]="'Limpiar filtros'"
+      type="button"
+    >
+      <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+      Limpiar
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="loading-container">
+    <i-lucide [img]="LoaderIcon" class="loading-spinner lucide-icon"></i-lucide>
+    <p class="loading-text">Cargando ejecuciones...</p>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!cargando">
+    <!-- Estado vacío -->
+    <div
+      *ngIf="ejecucionesFiltered.length === 0 && !filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide [img]="ActivityIcon" class="empty-icon lucide-icon"></i-lucide>
+      <h3 class="empty-title">No hay ejecuciones</h3>
+      <p class="empty-description">
+        No se han registrado ejecuciones para esta regla aún.
+      </p>
+      <button class="create-button" (click)="abrirModalCrear()" type="button">
+        <i-lucide [img]="PlusIcon" class="lucide-icon"></i-lucide>
+        Crear Primera Ejecución
+      </button>
+    </div>
+
+    <!-- Sin resultados de búsqueda -->
+    <div
+      *ngIf="ejecucionesFiltered.length === 0 && filtroTexto"
+      class="empty-state"
+    >
+      <i-lucide [img]="SearchIcon" class="empty-icon lucide-icon"></i-lucide>
+      <h3 class="empty-title">Sin resultados</h3>
+      <p class="empty-description">
+        No se encontraron ejecuciones que coincidan con "{{ filtroTexto }}".
+      </p>
+      <button class="filter-button" (click)="limpiarFiltros()" type="button">
+        <i-lucide [img]="XIcon" class="lucide-icon"></i-lucide>
+        Limpiar Búsqueda
+      </button>
+    </div>
+
+    <!-- Tabla de ejecuciones -->
+    <div *ngIf="ejecucionesFiltered.length > 0" class="table-container">
+      <div class="table-header">
+        <h3 class="table-title">
+          <i-lucide [img]="ListIcon" class="lucide-icon"></i-lucide>
+          Historial de Ejecuciones
+        </h3>
+        <span class="table-info">
+          {{ ejecucionesFiltered.length }} de
+          {{ ejecuciones.length }} ejecuciones
+        </span>
+      </div>
+
+      <table class="ejecuciones-table">
+        <thead>
+          <tr>
+            <th class="id-column">ID</th>
+            <th class="regla-column">Regla</th>
+            <th class="evento-column">Evento</th>
+            <th class="usuario-column">Usuario</th>
+            <th class="fecha-column">Fecha</th>
+            <th class="estado-column">Estado</th>
+            <th class="mensaje-column">Mensaje</th>
+            <th class="acciones-column">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="
+              let ejecucion of ejecucionesFiltered
+                | slice
+                  : (paginaActual - 1) * elementosPorPagina
+                  : paginaActual * elementosPorPagina;
+              trackBy: trackByEjecucion
+            "
+          >
+            <td class="id-column">
+              <span class="id-badge">#{{ ejecucion.id }}</span>
+            </td>
+            <td class="regla-column">
+              <span class="regla-badge">
+                <i-lucide [img]="SettingsIcon" class="lucide-icon"></i-lucide>
+                Regla #{{ ejecucion.regla }}
+              </span>
+            </td>
+            <td class="evento-column">
+              <span
+                [class]="
+                  'evento-badge ' + getEventoBadgeClass(ejecucion.evento)
+                "
+              >
+                <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+                {{ getEventoTexto(ejecucion.evento) }}
+              </span>
+            </td>
+            <td class="usuario-column">
+              <div class="usuario-badge">
+                <i-lucide [img]="UserIcon" class="lucide-icon"></i-lucide>
+                Usuario #{{ ejecucion.usuario }}
+              </div>
+            </td>
+            <td class="fecha-column">
+              <div class="fecha-badge">
+                <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
+                {{ formatearFecha(ejecucion.fecha) }}
+              </div>
+            </td>
+            <td class="estado-column">
+              <div [class]="'estado-badge ' + ejecucion.estado">
+                <i-lucide
+                  [img]="
+                    ejecucion.estado === 'exito' ? CheckCircleIcon : XCircleIcon
+                  "
+                  class="lucide-icon"
+                ></i-lucide>
+                {{ ejecucion.estado | titlecase }}
+              </div>
+            </td>
+            <td class="mensaje-column" [title]="ejecucion.mensaje">
+              {{ ejecucion.mensaje }}
+            </td>
+            <td class="acciones-column">
+              <div class="action-buttons">
+                <button
+                  class="action-button view"
+                  (click)="verEjecucion(ejecucion)"
+                  [attr.aria-label]="'Ver ejecución ' + ejecucion.id"
+                  title="Ver Detalles"
+                  type="button"
+                >
+                  <i-lucide [img]="EyeIcon" class="lucide-icon"></i-lucide>
+                </button>
+                <button
+                  class="action-button delete"
+                  (click)="confirmarEliminar(ejecucion)"
+                  [attr.aria-label]="'Eliminar ejecución ' + ejecucion.id"
+                  title="Eliminar"
+                  type="button"
+                >
+                  <i-lucide [img]="TrashIcon" class="lucide-icon"></i-lucide>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <div class="pagination-container" *ngIf="totalPaginas > 1">
+        <div class="pagination-info">
+          Mostrando {{ (paginaActual - 1) * elementosPorPagina + 1 }} -
+          {{
+            Math.min(
+              paginaActual * elementosPorPagina,
+              ejecucionesFiltered.length
+            )
+          }}
+          de {{ ejecucionesFiltered.length }} ejecuciones
+        </div>
+        <div class="pagination-controls">
+          <button
+            class="pagination-button"
+            (click)="cambiarPagina(paginaActual - 1)"
+            [disabled]="paginaActual === 1"
+            type="button"
+          >
+            <i-lucide [img]="ChevronLeftIcon" class="lucide-icon"></i-lucide>
+            Anterior
+          </button>
+          <button
+            class="pagination-button"
+            (click)="cambiarPagina(paginaActual + 1)"
+            [disabled]="paginaActual === totalPaginas"
+            type="button"
+          >
+            Siguiente
+            <i-lucide [img]="ChevronRightIcon" class="lucide-icon"></i-lucide>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear ejecución -->
+<p-dialog
+  [(visible)]="mostrarModalCrear"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="ejecucion-dialog"
+  [style]="{ width: '700px', maxWidth: '95vw' }"
+  header="Crear Nueva Ejecución"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content">
+    <form
+      [formGroup]="nuevaEjecucionForm"
+      (ngSubmit)="crearEjecucion()"
+      novalidate
+    >
+      <!-- Campo Regla -->
+      <div class="form-field">
+        <label for="regla" class="form-label">
+          <i-lucide [img]="SettingsIcon" class="lucide-icon"></i-lucide>
+          Regla Asociada
+        </label>
+        <input
+          id="regla"
+          type="number"
+          formControlName="regla"
+          placeholder="ID de la regla"
+          class="form-input"
+          readonly
+        />
+        <small
+          *ngIf="
+            nuevaEjecucionForm.get('regla')?.invalid &&
+            nuevaEjecucionForm.get('regla')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("regla") }}
+        </small>
+      </div>
+
+      <!-- Campo Evento -->
+      <div class="form-field">
+        <label for="evento" class="form-label">
+          <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+          Evento *
+        </label>
+        <p-dropdown
+          [options]="eventosOpciones"
+          formControlName="evento"
+          placeholder="Seleccione un evento"
+          styleClass="form-select"
+          [showClear]="true"
+        ></p-dropdown>
+        <small
+          *ngIf="
+            nuevaEjecucionForm.get('evento')?.invalid &&
+            nuevaEjecucionForm.get('evento')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("evento") }}
+        </small>
+      </div>
+
+      <!-- Campo Estado -->
+      <div class="form-field">
+        <label for="estado" class="form-label">
+          <i-lucide [img]="CheckCircleIcon" class="lucide-icon"></i-lucide>
+          Estado *
+        </label>
+        <p-dropdown
+          [options]="estadosOpciones"
+          formControlName="estado"
+          placeholder="Seleccione un estado"
+          styleClass="form-select"
+          [showClear]="true"
+        ></p-dropdown>
+        <small
+          *ngIf="
+            nuevaEjecucionForm.get('estado')?.invalid &&
+            nuevaEjecucionForm.get('estado')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("estado") }}
+        </small>
+      </div>
+
+      <!-- Campo Mensaje -->
+      <div class="form-field">
+        <label for="mensaje" class="form-label">
+          <i-lucide [img]="MessageSquareIcon" class="lucide-icon"></i-lucide>
+          Mensaje *
+        </label>
+        <textarea
+          id="mensaje"
+          formControlName="mensaje"
+          placeholder="Mensaje descriptivo de la ejecución"
+          class="form-textarea"
+          rows="3"
+        ></textarea>
+        <small
+          *ngIf="
+            nuevaEjecucionForm.get('mensaje')?.invalid &&
+            nuevaEjecucionForm.get('mensaje')?.touched
+          "
+          class="error-message"
+        >
+          <i-lucide [img]="AlertCircleIcon" class="lucide-icon"></i-lucide>
+          {{ getErrorMessage("mensaje") }}
+        </small>
+      </div>
+
+      <div class="form-info">
+        <p class="info-text">
+          <i-lucide [img]="UserIcon" class="lucide-icon"></i-lucide>
+          La ejecución se registrará automáticamente con tu usuario actual.
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [text]="true"
+        (onClick)="cerrarModalCrear()"
+        [disabled]="guardando"
+        styleClass="p-button-text"
+      >
+      </p-button>
+      <p-button
+        label="Crear"
+        icon="pi pi-check"
+        (onClick)="crearEjecucion()"
+        [disabled]="nuevaEjecucionForm.invalid || guardando"
+        [loading]="guardando"
+        styleClass="p-button-primary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal para ver detalles -->
+<p-dialog
+  [(visible)]="mostrarModalVer"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="false"
+  [closeOnEscape]="true"
+  styleClass="ver-ejecucion-dialog"
+  [style]="{ width: '600px', maxWidth: '90vw' }"
+  header="Detalles de la Ejecución"
+  [baseZIndex]="10000"
+>
+  <div class="modal-content" *ngIf="ejecucionSeleccionada">
+    <div class="detalle-grid">
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="HashIcon" class="lucide-icon"></i-lucide>
+          ID:
+        </label>
+        <span class="detalle-valor">#{{ ejecucionSeleccionada.id }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="SettingsIcon" class="lucide-icon"></i-lucide>
+          Regla:
+        </label>
+        <span class="detalle-valor"
+          >Regla #{{ ejecucionSeleccionada.regla }}</span
+        >
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="ZapIcon" class="lucide-icon"></i-lucide>
+          Evento:
+        </label>
+        <span class="detalle-valor">{{
+          getEventoTexto(ejecucionSeleccionada.evento)
+        }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="UserIcon" class="lucide-icon"></i-lucide>
+          Usuario:
+        </label>
+        <span class="detalle-valor"
+          >Usuario #{{ ejecucionSeleccionada.usuario }}</span
+        >
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="CalendarIcon" class="lucide-icon"></i-lucide>
+          Fecha:
+        </label>
+        <span class="detalle-valor">{{
+          formatearFechaCompleta(ejecucionSeleccionada.fecha)
+        }}</span>
+      </div>
+
+      <div class="detalle-item">
+        <label class="detalle-label">
+          <i-lucide [img]="CheckCircleIcon" class="lucide-icon"></i-lucide>
+          Estado:
+        </label>
+        <span class="detalle-valor">{{
+          ejecucionSeleccionada.estado | titlecase
+        }}</span>
+      </div>
+
+      <div class="detalle-item full-width">
+        <label class="detalle-label">
+          <i-lucide [img]="MessageSquareIcon" class="lucide-icon"></i-lucide>
+          Mensaje:
+        </label>
+        <span class="detalle-valor">{{ ejecucionSeleccionada.mensaje }}</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-actions">
+      <p-button
+        label="Cerrar"
+        icon="pi pi-times"
+        (onClick)="cerrarModalVer()"
+        styleClass="p-button-secondary"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast para notificaciones -->
+<p-toast
+  position="top-right"
+  [life]="5000"
+  [showTransformOptions]="'translateX(100%)'"
+  [hideTransformOptions]="'translateX(100%)'"
+  [showTransitionOptions]="'300ms ease-out'"
+  [hideTransitionOptions]="'250ms ease-in'"
+  [baseZIndex]="9999"
+>
+</p-toast>
+
+<!-- Modal de confirmación para eliminar -->
+<p-confirmDialog
+  [style]="{ width: '450px', maxWidth: '90vw' }"
+  [baseZIndex]="10000"
+  [closable]="true"
+  [dismissableMask]="false"
+  rejectButtonStyleClass="p-button-text"
+  acceptButtonStyleClass="p-button-danger"
+>
+</p-confirmDialog>
