@@ -26,15 +26,32 @@ export class DocumentsService {
   addDoc(doc: DocumentoCreate, file: File) {
     const formData = new FormData();
 
+    console.log(doc);
+    // console.log(file);
+
     Object.entries(doc).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
-        formData.append(key, value as string | Blob);
+        // Si el valor es un objeto, intenta extraer el id o serializarlo
+        if (typeof value === 'object' && value !== null && 'id' in value) {
+          formData.append(key, (value as any).id.toString());
+        } else {
+          formData.append(key, value.toString());
+        }
       }
     });
 
     formData.append('archivo', file);
+    console.log('Archivo agregado al FormData:', formData.get('archivo'));
+    // Verifica el contenido real del FormData
+    /*  for (const [k, v] of formData.entries()) {
+      console.log('FormData:', k, v);
+    } */
 
-    return this.http.post(this.DOCS_URL, formData);
+    // ARREGLAR ESTA MIERDAAAAA
+
+    return this.http.post<DocumentoCreate>(`${this.DOCS_URL}documentos/`, doc);
+
+    // return this.http.post(`${this.DOCS_URL}documentos/`, formData);
   }
 
   getData() {
@@ -43,6 +60,10 @@ export class DocumentsService {
       tipos_documento: TipoDocumento[];
       documentos: Documento[];
     }>(`${this.DOCS_URL}resumen/`);
+  }
+
+  deleteDoc(id: string) {
+    return this.http.delete(`${this.DOCS_URL}documentos/${id}/`);
   }
 
   addNewVersion(doc_id: string, file: File) {
