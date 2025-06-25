@@ -54,7 +54,7 @@ import type { Formulario } from '../../models/formulario.model';
   imports: [
     CommonModule,
     RouterOutlet,
-    RouterLink,
+
     ReactiveFormsModule,
     FormsModule,
     LucideAngularModule,

@@ -64,8 +64,6 @@ interface KeyValuePair {
   standalone: true,
   imports: [
     CommonModule,
-    RouterOutlet,
-    RouterLink,
     ReactiveFormsModule,
     FormsModule,
     LucideAngularModule,
