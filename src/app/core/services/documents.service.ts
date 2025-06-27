@@ -6,6 +6,7 @@ import {
   DocumentoCreate,
   TipoDocumento,
   Documento,
+  Usuario,
 } from '../../models/documento.model';
 
 @Injectable({
@@ -13,7 +14,7 @@ import {
 })
 export class DocumentsService {
   DOCS_URL = `${BASE_URL}/documentos/`;
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getDocs() {
     return this.http.get(`${this.DOCS_URL}documentos/`);
@@ -88,6 +89,33 @@ export class DocumentsService {
 
   getDocumentTypes() {
     return this.http.get(`${this.DOCS_URL}tipos-documentos/`);
+  }
+
+  loadDashboardData() {
+    return this.http.get<{
+      areas: Area[];
+      tipos_documento: TipoDocumento[];
+      documentos: Documento[];
+      total_documentos: number;
+      documentos_publicos: number;
+      documentos_privados: number;
+      total_versiones: number;
+      documentos_trend: number;
+      versiones_trend: number;
+      publicos_trend: number;
+      privados_trend: number;
+      documentos_recientes: (Documento & { diasDesdeModificacion: number })[];
+      actividad_reciente: {
+        id: string;
+        tipo: 'creacion' | 'version' | 'compartido' | 'modificacion';
+        titulo: string;
+        usuario: Usuario;
+        fecha: Date;
+        descripcion: string;
+        color: string;
+      }[];
+      documentos_compartidos: Documento[];
+    }>(`${this.DOCS_URL}dashboard/`);
   }
 
   //OPERACIONES CRUDS PARA DOCUMENTOS
