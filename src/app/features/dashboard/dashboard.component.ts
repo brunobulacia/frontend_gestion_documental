@@ -155,7 +155,7 @@ export default class DashboardComponent implements OnInit, OnDestroy {
   // Suscripciones
   private subscriptions: Subscription[] = [];
 
-  constructor(private router: Router, private docsService: DocumentsService) { }
+  constructor(private router: Router, private docsService: DocumentsService) {}
 
   ngOnInit(): void {
     this.initializeComponent();
@@ -184,7 +184,6 @@ export default class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(autoRefresh);
   }
 
-
   /**
    * Actualiza los datos
    */
@@ -192,10 +191,9 @@ export default class DashboardComponent implements OnInit, OnDestroy {
     this.fetchData();
   }
 
-
   /**
    * Obtiene datos del servicio
-   */private fetchData(): void {
+   */ private fetchData(): void {
     this.isLoading = true;
     const sub = this.docsService.loadDashboardData().subscribe({
       next: (res) => {
@@ -240,7 +238,6 @@ export default class DashboardComponent implements OnInit, OnDestroy {
     this.prepararDocumentosPorArea();
   }
 
-
   /**
    * Calcula estadísticas generales
    */
@@ -254,7 +251,6 @@ export default class DashboardComponent implements OnInit, OnDestroy {
       return total + (doc.versiones?.length || 0);
     }, 0);
   }
-
 
   /**
    * Prepara estadísticas de documentos por tipo
@@ -357,7 +353,6 @@ export default class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-
   // Métodos de tracking para ngFor (optimización de rendimiento)
 
   trackByDocumentId(index: number, doc: Documento): string {
@@ -392,14 +387,14 @@ export default class DashboardComponent implements OnInit, OnDestroy {
    * Ver documento específico
    */
   verDocumento(documentoId: string): void {
-    this.router.navigate(['/documents', documentoId]);
+    this.router.navigate(['/documents']);
   }
 
   /**
    * Editar documento específico
    */
   editarDocumento(documentoId: string): void {
-    this.router.navigate(['/documents', documentoId, 'edit']);
+    this.router.navigate(['/documents']);
   }
 
   /**
