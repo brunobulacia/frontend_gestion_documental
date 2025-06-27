@@ -70,6 +70,7 @@ export class AuthService {
   logout() {
     if (this.isBrowser()) {
       localStorage.removeItem('token');
+      localStorage.removeItem('perfil');
       window.location.reload();
     }
   }
