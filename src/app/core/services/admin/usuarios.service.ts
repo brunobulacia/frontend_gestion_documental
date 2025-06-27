@@ -23,8 +23,10 @@ export class UsuariosService {
   }
 
   updateUsuario(id: number, usuario: Partial<Usuarios>) {
+    console.log('ID:', id);
+    console.log('Usuario:', usuario);
     return this.http.put<Partial<Usuarios>>(
-      `${this.USERS_URL}/usuarios/${id}/`,
+      `${this.USERS_URL}/${id}/actualizar/`,
       usuario
     );
   }

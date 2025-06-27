@@ -2,7 +2,10 @@ export interface Usuarios {
   id: number;
   username: string;
   email: string;
-  roles: string[];
+  roles: {
+    id: number;
+    nombre: string;
+  }[];
   organizacion?: {
     id: number;
     nombre: string;

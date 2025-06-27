@@ -235,7 +235,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
             (usuario.roles &&
               Array.isArray(usuario.roles) &&
               usuario.roles.some(
-                (rol) => rol && rol.toLowerCase().includes(filtro)
+                (rol) => rol && rol.nombre.toLowerCase().includes(filtro)
               ))
           );
         });
@@ -286,6 +286,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   verUsuario(usuario: Usuarios): void {
     this.usuarioSeleccionado = usuario;
+    console.log(usuario.roles);
     this.mostrarModalVer = true;
   }
 
